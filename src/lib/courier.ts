@@ -73,7 +73,10 @@ export function rankSlabQuotes(
 
   const results: SlabQuoteResult[] = [];
   for (const [courier, list] of byCourier) {
-    const slab = list.find((s) => {
+    const sorted = [...list].sort(
+      (a, b) => Number(a.min_weight) - Number(b.min_weight),
+    );
+    const slab = sorted.find((s) => {
       const min = Number(s.min_weight);
       const max = Number(s.max_weight);
       if (min === 0) return input.weight >= 0 && input.weight <= max;
