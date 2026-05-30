@@ -115,4 +115,4 @@ export function rankSlabQuotes(
   return results.sort((a, b) => a.total - b.total);
 }
 
-export const ADMIN_PASSPHRASE_FALLBACK = "courierwise-admin";
+
