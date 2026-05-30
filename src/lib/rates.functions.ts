@@ -1,14 +1,17 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { supabaseAdmin } from "@/integrations/supabase/client.server";
-import { ADMIN_PASSPHRASE_FALLBACK } from "./courier";
 
 function checkAdmin(passphrase: string) {
-  const expected = process.env.ADMIN_PASSPHRASE || ADMIN_PASSPHRASE_FALLBACK;
+  const expected = process.env.ADMIN_PASSPHRASE;
+  if (!expected) {
+    throw new Error("ADMIN_PASSPHRASE is not configured");
+  }
   if (passphrase !== expected) {
     throw new Error("Unauthorized");
   }
 }
+
 
 const rateSchema = z.object({
   courier_name: z.string().min(1).max(100),
