@@ -1,10 +1,12 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { supabaseAdmin } from "@/integrations/supabase/client.server";
-import { ADMIN_PASSPHRASE_FALLBACK } from "./courier";
 
 function checkAdmin(passphrase: string) {
-  const expected = process.env.ADMIN_PASSPHRASE || ADMIN_PASSPHRASE_FALLBACK;
+  const expected = process.env.ADMIN_PASSPHRASE;
+  if (!expected) {
+    throw new Error("ADMIN_PASSPHRASE is not configured");
+  }
   if (passphrase !== expected) {
     throw new Error("Unauthorized");
   }
@@ -50,6 +52,28 @@ export const upsertSlab = createServerFn({ method: "POST" })
     if (data.slab.max_weight <= data.slab.min_weight) {
       throw new Error("max_weight must be greater than min_weight");
     }
+
+    // Overlap check: same courier + zone, existing.min < new.max AND existing.max > new.min
+    const { data: existing, error: exErr } = await supabaseAdmin
+      .from("courier_rate_slabs")
+      .select("id, min_weight, max_weight")
+      .eq("courier_name", data.slab.courier_name)
+      .eq("zone", data.slab.zone);
+    if (exErr) throw new Error(exErr.message);
+
+    const overlaps = (existing ?? []).some((row) => {
+      if (data.id && row.id === data.id) return false;
+      return (
+        Number(row.min_weight) < data.slab.max_weight &&
+        Number(row.max_weight) > data.slab.min_weight
+      );
+    });
+    if (overlaps) {
+      throw new Error(
+        "This slab overlaps with an existing slab for this courier and zone.",
+      );
+    }
+
     if (data.id) {
       const { error } = await supabaseAdmin
         .from("courier_rate_slabs")
