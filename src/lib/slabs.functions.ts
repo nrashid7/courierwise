@@ -47,9 +47,6 @@ export const upsertSlab = createServerFn({ method: "POST" })
   }))
   .handler(async ({ data }) => {
     checkAdmin(data.passphrase);
-    if (data.max_weight !== undefined) {
-      // no-op
-    }
     if (data.slab.max_weight <= data.slab.min_weight) {
       throw new Error("max_weight must be greater than min_weight");
     }
