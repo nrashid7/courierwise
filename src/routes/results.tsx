@@ -116,11 +116,15 @@ function ResultsPage() {
         </p>
 
         {allSample && (
-          <div className="mt-3 flex items-start gap-2 rounded-lg border border-warning/30 bg-warning/10 px-3 py-2 text-xs text-warning-foreground">
+          <div
+            role="alert"
+            className="mt-3 flex items-start gap-2 rounded-lg border border-warning/40 bg-warning/10 px-3 py-2 text-xs font-medium text-warning-foreground"
+          >
             <Info className="mt-0.5 h-4 w-4 shrink-0 text-warning" />
             <p>
-              These rates are sample placeholders. Replace with verified merchant
-              rates before public launch.
+              Verified rates required before public launch — every rate shown
+              here is a sample placeholder. Replace with verified merchant
+              rates before sharing publicly.
             </p>
           </div>
         )}
