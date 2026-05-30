@@ -13,6 +13,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { CITIES, ZONES } from "@/lib/courier";
+import { trackEvent } from "@/lib/analytics";
 import { Disclaimer } from "@/components/Disclaimer";
 
 export const Route = createFileRoute("/compare")({
@@ -51,6 +52,13 @@ function ComparePage() {
       toast.error("COD amount cannot be negative.");
       return;
     }
+    trackEvent("compare_submitted", {
+      zone,
+      weight: weightNum,
+      cod: codNum,
+      pickup,
+      destination,
+    });
     navigate({
       to: "/results",
       search: {
