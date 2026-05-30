@@ -1,6 +1,7 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
-import { ArrowLeft, Calculator } from "lucide-react";
+import { ArrowLeft, Calculator, Info } from "lucide-react";
 import { useState } from "react";
+import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -36,16 +37,28 @@ function ComparePage() {
   const [cod, setCod] = useState("0");
   const [productType, setProductType] = useState("");
 
+  const weightNum = Number(weight) || 0;
+  const codNum = Number(cod) || 0;
+  const overWeight = weightNum > 3;
+
   const onSubmit = (e: React.FormEvent) => {
     e.preventDefault();
+    if (weightNum <= 0) {
+      toast.error("Weight must be greater than 0.");
+      return;
+    }
+    if (codNum < 0) {
+      toast.error("COD amount cannot be negative.");
+      return;
+    }
     navigate({
       to: "/results",
       search: {
         pickup,
         destination,
         zone,
-        weight: Number(weight) || 0,
-        cod: Number(cod) || 0,
+        weight: weightNum,
+        cod: codNum,
         productType: productType || undefined,
       },
     });
@@ -116,6 +129,13 @@ function ComparePage() {
               />
             </Field>
           </div>
+
+          {overWeight && (
+            <div className="flex items-start gap-2 rounded-lg border border-warning/30 bg-warning/10 px-3 py-2 text-xs text-warning-foreground">
+              <Info className="mt-0.5 h-4 w-4 shrink-0 text-warning" />
+              <p>Rates above 3kg may vary by courier. Verify before booking.</p>
+            </div>
+          )}
 
           <Field label="Product type (optional)">
             <Input
