@@ -130,6 +130,7 @@ export type Database = {
           id: string
           issue: string
           reporter_contact: string | null
+          reviewed: boolean
           screenshot_note: string | null
           user_cod_amount: number | null
           user_weight: number | null
@@ -142,6 +143,7 @@ export type Database = {
           id?: string
           issue: string
           reporter_contact?: string | null
+          reviewed?: boolean
           screenshot_note?: string | null
           user_cod_amount?: number | null
           user_weight?: number | null
@@ -154,6 +156,7 @@ export type Database = {
           id?: string
           issue?: string
           reporter_contact?: string | null
+          reviewed?: boolean
           screenshot_note?: string | null
           user_cod_amount?: number | null
           user_weight?: number | null

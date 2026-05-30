@@ -31,6 +31,11 @@ import {
   toggleSlabActive,
   upsertSlab,
 } from "@/lib/slabs.functions";
+import {
+  listRateReports,
+  markReportReviewed,
+  type RateReport,
+} from "@/lib/reports.functions";
 
 export const Route = createFileRoute("/admin")({
   head: () => ({
@@ -176,8 +181,97 @@ function AdminPanel({ passphrase, onLock }: { passphrase: string; onLock: () => 
             <p className="text-sm text-muted-foreground">No slabs match your filters.</p>
           )}
         </div>
+        <ReportsSection passphrase={passphrase} />
       </main>
     </div>
+  );
+}
+
+function ReportsSection({ passphrase }: { passphrase: string }) {
+  const qc = useQueryClient();
+  const list = useServerFn(listRateReports);
+  const mark = useServerFn(markReportReviewed);
+  const [showReviewed, setShowReviewed] = useState(false);
+
+  const { data, isLoading, error } = useQuery({
+    queryKey: ["admin_reports"],
+    queryFn: () => list({ data: { passphrase } }),
+    retry: false,
+  });
+
+  const markMut = useMutation({
+    mutationFn: (vars: { id: string; reviewed: boolean }) =>
+      mark({ data: { passphrase, ...vars } }),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ["admin_reports"] }),
+    onError: (e: Error) => toast.error(e.message),
+  });
+
+  const reports = (data?.reports ?? []) as RateReport[];
+  const visible = showReviewed ? reports : reports.filter((r) => !r.reviewed);
+
+  return (
+    <section className="mt-10">
+      <div className="mb-3 flex items-center justify-between">
+        <h2 className="text-base font-semibold">User-submitted reports</h2>
+        <label className="flex items-center gap-2 text-xs text-muted-foreground">
+          <Switch checked={showReviewed} onCheckedChange={setShowReviewed} />
+          Show reviewed
+        </label>
+      </div>
+
+      {isLoading && <p className="text-sm text-muted-foreground">Loading reports…</p>}
+      {error && (
+        <p className="text-sm text-destructive">{(error as Error).message}</p>
+      )}
+
+      <div className="space-y-2">
+        {visible.map((r) => (
+          <div key={r.id} className="rounded-xl border bg-card p-3">
+            <div className="flex flex-wrap items-center gap-2">
+              <span className="font-semibold">{r.courier_name}</span>
+              {r.zone && (
+                <span className="rounded bg-muted px-1.5 py-0.5 text-[10px] uppercase tracking-wide text-muted-foreground">
+                  {r.zone}
+                </span>
+              )}
+              {r.reviewed && (
+                <span className="rounded bg-accent px-1.5 py-0.5 text-[10px] uppercase tracking-wide text-accent-foreground">
+                  reviewed
+                </span>
+              )}
+              <span className="ml-auto text-[11px] text-muted-foreground">
+                {new Date(r.created_at).toLocaleString()}
+              </span>
+            </div>
+            <p className="mt-2 whitespace-pre-wrap text-sm">{r.issue}</p>
+            <div className="mt-2 grid gap-1 text-xs text-muted-foreground sm:grid-cols-2">
+              {r.actual_amount != null && <span>Actual charged: ৳{r.actual_amount}</span>}
+              {r.user_weight != null && <span>User weight: {r.user_weight} kg</span>}
+              {r.user_cod_amount != null && <span>User COD: ৳{r.user_cod_amount}</span>}
+              {r.reporter_contact && <span>Contact: {r.reporter_contact}</span>}
+              {r.screenshot_note && (
+                <span className="sm:col-span-2">Screenshot note: {r.screenshot_note}</span>
+              )}
+            </div>
+            <div className="mt-3 flex justify-end">
+              <Button
+                size="sm"
+                variant={r.reviewed ? "outline" : "default"}
+                onClick={() =>
+                  markMut.mutate({ id: r.id, reviewed: !r.reviewed })
+                }
+                disabled={markMut.isPending}
+              >
+                {r.reviewed ? "Mark as unreviewed" : "Mark as reviewed"}
+              </Button>
+            </div>
+          </div>
+        ))}
+        {!isLoading && visible.length === 0 && (
+          <p className="text-sm text-muted-foreground">No reports to show.</p>
+        )}
+      </div>
+    </section>
   );
 }
 

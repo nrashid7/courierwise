@@ -13,6 +13,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { CITIES, ZONES } from "@/lib/courier";
+import { trackEvent } from "@/lib/analytics";
 import { Disclaimer } from "@/components/Disclaimer";
 
 export const Route = createFileRoute("/compare")({
@@ -51,6 +52,13 @@ function ComparePage() {
       toast.error("COD amount cannot be negative.");
       return;
     }
+    trackEvent("compare_submitted", {
+      zone,
+      weight: weightNum,
+      cod: codNum,
+      pickup,
+      destination,
+    });
     navigate({
       to: "/results",
       search: {
@@ -104,6 +112,11 @@ function ComparePage() {
                 {ZONES.map((z) => <SelectItem key={z} value={z}>{z}</SelectItem>)}
               </SelectContent>
             </Select>
+            <p className="text-[11px] text-muted-foreground">
+              Not sure? Choose <span className="font-medium">Inside Dhaka</span> only for
+              Dhaka city delivery. Use <span className="font-medium">Outside Dhaka</span> for
+              other districts.
+            </p>
           </Field>
 
           <div className="grid gap-4 sm:grid-cols-2">

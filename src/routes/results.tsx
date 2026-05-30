@@ -1,8 +1,9 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { ArrowLeft, BadgeCheck, Clock, ExternalLink, Flag, Info } from "lucide-react";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { z } from "zod";
+import { trackEvent } from "@/lib/analytics";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -68,6 +69,18 @@ function ResultsPage() {
         codAmount: search.cod,
       })
     : [];
+
+  useEffect(() => {
+    if (!isLoading) {
+      trackEvent("results_viewed", {
+        zone: search.zone,
+        weight: search.weight,
+        cod: search.cod,
+        resultCount: quotes.length,
+      });
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isLoading, search.zone, search.weight, search.cod]);
 
   const allSample =
     quotes.length > 0 &&
@@ -262,6 +275,7 @@ function ReportDialog({
   const [issue, setIssue] = useState("");
   const [actual, setActual] = useState("");
   const [screenshotNote, setScreenshotNote] = useState("");
+  const [reporterContact, setReporterContact] = useState("");
   const [submitting, setSubmitting] = useState(false);
   const submit = useServerFn(submitRateReport);
 
@@ -282,11 +296,13 @@ function ReportDialog({
           user_weight: userWeight,
           user_cod_amount: userCod,
           screenshot_note: screenshotNote.trim() || null,
+          reporter_contact: reporterContact.trim() || null,
         },
       });
+      trackEvent("rate_report_submitted", { courier: courierName, zone });
       toast.success("Thanks — report submitted.");
       setOpen(false);
-      setIssue(""); setActual(""); setScreenshotNote("");
+      setIssue(""); setActual(""); setScreenshotNote(""); setReporterContact("");
     } catch (err) {
       toast.error((err as Error).message);
     } finally {
@@ -338,6 +354,15 @@ function ReportDialog({
             <p className="text-[10px] text-muted-foreground">
               Submitted with weight {userWeight}kg and COD ৳{userCod}. Image upload coming soon.
             </p>
+          </div>
+          <div className="space-y-1.5">
+            <Label className="text-xs">Your contact (optional)</Label>
+            <Input
+              value={reporterContact}
+              onChange={(e) => setReporterContact(e.target.value)}
+              placeholder="Phone, email, or page name — so we can follow up"
+              maxLength={200}
+            />
           </div>
           <DialogFooter>
             <Button type="submit" disabled={submitting} className="w-full">
