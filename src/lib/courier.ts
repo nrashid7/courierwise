@@ -23,22 +23,6 @@ export const CITIES = [
   "Tangail",
 ];
 
-// Legacy type — kept for backwards compatibility with old courier_rates table.
-export interface CourierRate {
-  id: string;
-  courier_name: string;
-  zone: string;
-  base_weight_limit: number;
-  base_price: number;
-  extra_kg_price: number;
-  cod_percent: number;
-  cod_fixed_fee: number;
-  estimated_delivery_time: string | null;
-  notes: string | null;
-  source_url: string | null;
-  last_verified_date: string | null;
-  active: boolean;
-}
 
 export interface CourierRateSlab {
   id: string;
