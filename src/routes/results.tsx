@@ -355,6 +355,15 @@ function ReportDialog({
               Submitted with weight {userWeight}kg and COD ৳{userCod}. Image upload coming soon.
             </p>
           </div>
+          <div className="space-y-1.5">
+            <Label className="text-xs">Your contact (optional)</Label>
+            <Input
+              value={reporterContact}
+              onChange={(e) => setReporterContact(e.target.value)}
+              placeholder="Phone, email, or page name — so we can follow up"
+              maxLength={200}
+            />
+          </div>
           <DialogFooter>
             <Button type="submit" disabled={submitting} className="w-full">
               {submitting ? "Submitting…" : "Submit report"}
