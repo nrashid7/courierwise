@@ -14,6 +14,60 @@ export type Database = {
   }
   public: {
     Tables: {
+      courier_rate_slabs: {
+        Row: {
+          active: boolean
+          cod_fixed_fee: number
+          cod_percent: number
+          courier_name: string
+          created_at: string
+          estimated_delivery_time: string | null
+          id: string
+          last_verified_date: string | null
+          max_weight: number
+          min_weight: number
+          notes: string | null
+          price: number
+          source_url: string | null
+          updated_at: string
+          zone: string
+        }
+        Insert: {
+          active?: boolean
+          cod_fixed_fee?: number
+          cod_percent?: number
+          courier_name: string
+          created_at?: string
+          estimated_delivery_time?: string | null
+          id?: string
+          last_verified_date?: string | null
+          max_weight: number
+          min_weight: number
+          notes?: string | null
+          price: number
+          source_url?: string | null
+          updated_at?: string
+          zone: string
+        }
+        Update: {
+          active?: boolean
+          cod_fixed_fee?: number
+          cod_percent?: number
+          courier_name?: string
+          created_at?: string
+          estimated_delivery_time?: string | null
+          id?: string
+          last_verified_date?: string | null
+          max_weight?: number
+          min_weight?: number
+          notes?: string | null
+          price?: number
+          source_url?: string | null
+          updated_at?: string
+          zone?: string
+        }
+        Relationships: []
+      }
       courier_rates: {
         Row: {
           active: boolean
@@ -77,6 +131,8 @@ export type Database = {
           issue: string
           reporter_contact: string | null
           screenshot_note: string | null
+          user_cod_amount: number | null
+          user_weight: number | null
           zone: string | null
         }
         Insert: {
@@ -87,6 +143,8 @@ export type Database = {
           issue: string
           reporter_contact?: string | null
           screenshot_note?: string | null
+          user_cod_amount?: number | null
+          user_weight?: number | null
           zone?: string | null
         }
         Update: {
@@ -97,6 +155,8 @@ export type Database = {
           issue?: string
           reporter_contact?: string | null
           screenshot_note?: string | null
+          user_cod_amount?: number | null
+          user_weight?: number | null
           zone?: string | null
         }
         Relationships: []

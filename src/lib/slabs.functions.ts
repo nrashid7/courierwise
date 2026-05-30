@@ -10,14 +10,14 @@ function checkAdmin(passphrase: string) {
   }
 }
 
-const rateSchema = z.object({
+const slabSchema = z.object({
   courier_name: z.string().min(1).max(100),
   zone: z.string().min(1).max(50),
-  base_weight_limit: z.number().min(0).max(100),
-  base_price: z.number().min(0).max(100000),
-  extra_kg_price: z.number().min(0).max(10000),
+  min_weight: z.number().min(0).max(1000),
+  max_weight: z.number().min(0).max(1000),
+  price: z.number().min(0).max(1000000),
   cod_percent: z.number().min(0).max(100),
-  cod_fixed_fee: z.number().min(0).max(10000),
+  cod_fixed_fee: z.number().min(0).max(100000),
   estimated_delivery_time: z.string().max(100).nullable().optional(),
   notes: z.string().max(2000).nullable().optional(),
   source_url: z.string().max(500).nullable().optional(),
@@ -25,64 +25,64 @@ const rateSchema = z.object({
   active: z.boolean(),
 });
 
-export const listAllRates = createServerFn({ method: "GET" })
+export const listAllSlabs = createServerFn({ method: "GET" })
   .inputValidator((input: { passphrase: string }) => input)
   .handler(async ({ data }) => {
     checkAdmin(data.passphrase);
     const { data: rows, error } = await supabaseAdmin
-      .from("courier_rates")
+      .from("courier_rate_slabs")
       .select("*")
       .order("courier_name")
-      .order("zone");
+      .order("zone")
+      .order("min_weight");
     if (error) throw new Error(error.message);
-    return { rates: rows ?? [] };
+    return { slabs: rows ?? [] };
   });
 
-export const upsertRate = createServerFn({ method: "POST" })
-  .inputValidator((input: { passphrase: string; id?: string; rate: unknown }) => ({
+export const upsertSlab = createServerFn({ method: "POST" })
+  .inputValidator((input: { passphrase: string; id?: string; slab: unknown }) => ({
     passphrase: String(input.passphrase),
     id: input.id,
-    rate: rateSchema.parse(input.rate),
+    slab: slabSchema.parse(input.slab),
   }))
   .handler(async ({ data }) => {
     checkAdmin(data.passphrase);
+    if (data.slab.max_weight <= data.slab.min_weight) {
+      throw new Error("max_weight must be greater than min_weight");
+    }
     if (data.id) {
       const { error } = await supabaseAdmin
-        .from("courier_rates")
-        .update({ ...data.rate, updated_at: new Date().toISOString() })
+        .from("courier_rate_slabs")
+        .update({ ...data.slab, updated_at: new Date().toISOString() })
         .eq("id", data.id);
       if (error) throw new Error(error.message);
     } else {
-      const { error } = await supabaseAdmin.from("courier_rates").insert(data.rate);
+      const { error } = await supabaseAdmin.from("courier_rate_slabs").insert(data.slab);
       if (error) throw new Error(error.message);
     }
     return { ok: true };
   });
 
-export const deleteRate = createServerFn({ method: "POST" })
+export const deleteSlab = createServerFn({ method: "POST" })
   .inputValidator((input: { passphrase: string; id: string }) => input)
   .handler(async ({ data }) => {
     checkAdmin(data.passphrase);
-    const { error } = await supabaseAdmin.from("courier_rates").delete().eq("id", data.id);
+    const { error } = await supabaseAdmin
+      .from("courier_rate_slabs")
+      .delete()
+      .eq("id", data.id);
     if (error) throw new Error(error.message);
     return { ok: true };
   });
 
-const reportSchema = z.object({
-  courier_name: z.string().min(1).max(100),
-  zone: z.string().max(50).optional().nullable(),
-  issue: z.string().min(3).max(2000),
-  actual_amount: z.number().min(0).max(1000000).optional().nullable(),
-  user_weight: z.number().min(0).max(1000).optional().nullable(),
-  user_cod_amount: z.number().min(0).max(10000000).optional().nullable(),
-  screenshot_note: z.string().max(1000).optional().nullable(),
-  reporter_contact: z.string().max(200).optional().nullable(),
-});
-
-export const submitRateReport = createServerFn({ method: "POST" })
-  .inputValidator((input: unknown) => reportSchema.parse(input))
+export const toggleSlabActive = createServerFn({ method: "POST" })
+  .inputValidator((input: { passphrase: string; id: string; active: boolean }) => input)
   .handler(async ({ data }) => {
-    const { error } = await supabaseAdmin.from("rate_reports").insert(data);
+    checkAdmin(data.passphrase);
+    const { error } = await supabaseAdmin
+      .from("courier_rate_slabs")
+      .update({ active: data.active, updated_at: new Date().toISOString() })
+      .eq("id", data.id);
     if (error) throw new Error(error.message);
     return { ok: true };
   });

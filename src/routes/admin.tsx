@@ -1,5 +1,5 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { ArrowLeft, Pencil, Plus, Trash2, Lock } from "lucide-react";
 import { useServerFn } from "@tanstack/react-start";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
@@ -7,6 +7,7 @@ import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Switch } from "@/components/ui/switch";
 import {
   Select,
   SelectContent,
@@ -23,18 +24,19 @@ import {
   DialogTrigger,
 } from "@/components/ui/dialog";
 import { Textarea } from "@/components/ui/textarea";
-import { COURIERS, ZONES, type CourierRate } from "@/lib/courier";
+import { COURIERS, ZONES, type CourierRateSlab } from "@/lib/courier";
 import {
-  deleteRate,
-  listAllRates,
-  upsertRate,
-} from "@/lib/rates.functions";
+  deleteSlab,
+  listAllSlabs,
+  toggleSlabActive,
+  upsertSlab,
+} from "@/lib/slabs.functions";
 
 export const Route = createFileRoute("/admin")({
   head: () => ({
     meta: [
       { title: "Admin — CourierWise" },
-      { name: "description", content: "Manage courier rates." },
+      { name: "description", content: "Manage courier rate slabs." },
     ],
   }),
   component: AdminPage,
@@ -59,7 +61,7 @@ function AdminPage() {
             </div>
             <h2 className="mt-3 text-base font-semibold">Enter admin passphrase</h2>
             <p className="mt-1 text-xs text-muted-foreground">
-              Required to view and edit courier rates.
+              Required to view and edit courier slab rates.
             </p>
             <form
               onSubmit={(e) => {
@@ -89,13 +91,24 @@ function AdminPage() {
 
 function AdminPanel({ passphrase, onLock }: { passphrase: string; onLock: () => void }) {
   const qc = useQueryClient();
-  const list = useServerFn(listAllRates);
+  const list = useServerFn(listAllSlabs);
+  const [courierFilter, setCourierFilter] = useState<string>("all");
+  const [zoneFilter, setZoneFilter] = useState<string>("all");
 
   const { data, isLoading, error } = useQuery({
-    queryKey: ["admin_rates"],
+    queryKey: ["admin_slabs"],
     queryFn: () => list({ data: { passphrase } }),
     retry: false,
   });
+
+  const filtered = useMemo(() => {
+    const all = (data?.slabs ?? []) as CourierRateSlab[];
+    return all.filter((s) => {
+      if (courierFilter !== "all" && s.courier_name !== courierFilter) return false;
+      if (zoneFilter !== "all" && s.zone !== zoneFilter) return false;
+      return true;
+    });
+  }, [data, courierFilter, zoneFilter]);
 
   if (error) {
     return (
@@ -110,53 +123,83 @@ function AdminPanel({ passphrase, onLock }: { passphrase: string; onLock: () => 
 
   return (
     <div className="min-h-screen bg-background">
-      <header className="mx-auto flex max-w-3xl items-center justify-between gap-2 px-4 py-4">
+      <header className="mx-auto flex max-w-4xl items-center justify-between gap-2 px-4 py-4">
         <div className="flex items-center gap-2">
           <Link to="/"><Button variant="ghost" size="icon"><ArrowLeft className="h-5 w-5" /></Button></Link>
-          <h1 className="text-lg font-semibold">Rate management</h1>
+          <h1 className="text-lg font-semibold">Slab rate management</h1>
         </div>
         <div className="flex gap-2">
-          <RateDialog
+          <SlabDialog
             passphrase={passphrase}
-            onSaved={() => qc.invalidateQueries({ queryKey: ["admin_rates"] })}
-            trigger={
-              <Button size="sm"><Plus className="mr-1 h-4 w-4" /> Add rate</Button>
-            }
+            onSaved={() => qc.invalidateQueries({ queryKey: ["admin_slabs"] })}
+            trigger={<Button size="sm"><Plus className="mr-1 h-4 w-4" /> Add slab</Button>}
           />
           <Button variant="outline" size="sm" onClick={onLock}>Lock</Button>
         </div>
       </header>
 
-      <main className="mx-auto max-w-3xl px-4 pb-16">
+      <main className="mx-auto max-w-4xl px-4 pb-16">
+        <div className="mb-3 grid gap-2 sm:grid-cols-2">
+          <div>
+            <Label className="text-xs">Courier</Label>
+            <Select value={courierFilter} onValueChange={setCourierFilter}>
+              <SelectTrigger><SelectValue /></SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All couriers</SelectItem>
+                {COURIERS.map((c) => <SelectItem key={c} value={c}>{c}</SelectItem>)}
+              </SelectContent>
+            </Select>
+          </div>
+          <div>
+            <Label className="text-xs">Zone</Label>
+            <Select value={zoneFilter} onValueChange={setZoneFilter}>
+              <SelectTrigger><SelectValue /></SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All zones</SelectItem>
+                {ZONES.map((z) => <SelectItem key={z} value={z}>{z}</SelectItem>)}
+              </SelectContent>
+            </Select>
+          </div>
+        </div>
+
         {isLoading && <p className="text-sm text-muted-foreground">Loading…</p>}
         <div className="space-y-2">
-          {data?.rates.map((r) => (
-            <RateRow
-              key={r.id}
-              rate={r as CourierRate}
+          {filtered.map((s) => (
+            <SlabRow
+              key={s.id}
+              slab={s}
               passphrase={passphrase}
-              onChanged={() => qc.invalidateQueries({ queryKey: ["admin_rates"] })}
+              onChanged={() => qc.invalidateQueries({ queryKey: ["admin_slabs"] })}
             />
           ))}
+          {!isLoading && filtered.length === 0 && (
+            <p className="text-sm text-muted-foreground">No slabs match your filters.</p>
+          )}
         </div>
       </main>
     </div>
   );
 }
 
-function RateRow({
-  rate,
+function SlabRow({
+  slab,
   passphrase,
   onChanged,
 }: {
-  rate: CourierRate;
+  slab: CourierRateSlab;
   passphrase: string;
   onChanged: () => void;
 }) {
-  const del = useServerFn(deleteRate);
+  const del = useServerFn(deleteSlab);
+  const toggle = useServerFn(toggleSlabActive);
   const delMut = useMutation({
-    mutationFn: () => del({ data: { passphrase, id: rate.id } }),
+    mutationFn: () => del({ data: { passphrase, id: slab.id } }),
     onSuccess: () => { toast.success("Deleted"); onChanged(); },
+    onError: (e: Error) => toast.error(e.message),
+  });
+  const toggleMut = useMutation({
+    mutationFn: (active: boolean) => toggle({ data: { passphrase, id: slab.id, active } }),
+    onSuccess: () => onChanged(),
     onError: (e: Error) => toast.error(e.message),
   });
 
@@ -165,30 +208,38 @@ function RateRow({
       <div className="flex items-start justify-between gap-2">
         <div className="min-w-0">
           <div className="flex flex-wrap items-center gap-2">
-            <span className="font-semibold">{rate.courier_name}</span>
+            <span className="font-semibold">{slab.courier_name}</span>
             <span className="rounded bg-muted px-1.5 py-0.5 text-[10px] uppercase tracking-wide text-muted-foreground">
-              {rate.zone}
+              {slab.zone}
             </span>
-            {!rate.active && (
+            <span className="rounded bg-accent px-1.5 py-0.5 text-[10px] font-medium text-accent-foreground">
+              {slab.min_weight}–{slab.max_weight} kg
+            </span>
+            {!slab.active && (
               <span className="rounded bg-destructive/10 px-1.5 py-0.5 text-[10px] uppercase tracking-wide text-destructive">
                 inactive
               </span>
             )}
           </div>
           <div className="mt-1 text-xs text-muted-foreground">
-            Base ৳{rate.base_price} up to {rate.base_weight_limit}kg · +৳{rate.extra_kg_price}/kg ·
-            COD {rate.cod_percent}% (min ৳{rate.cod_fixed_fee})
+            ৳{slab.price} · COD {slab.cod_percent}% (min ৳{slab.cod_fixed_fee})
+            {slab.estimated_delivery_time && <> · {slab.estimated_delivery_time}</>}
           </div>
-          {rate.last_verified_date && (
+          {slab.last_verified_date && (
             <div className="mt-1 text-[11px] text-muted-foreground">
-              Last verified: {rate.last_verified_date}
+              Last verified: {slab.last_verified_date}
             </div>
           )}
         </div>
-        <div className="flex shrink-0 gap-1">
-          <RateDialog
+        <div className="flex shrink-0 items-center gap-1">
+          <Switch
+            checked={slab.active}
+            onCheckedChange={(v) => toggleMut.mutate(v)}
+            aria-label="Active"
+          />
+          <SlabDialog
             passphrase={passphrase}
-            initial={rate}
+            initial={slab}
             onSaved={onChanged}
             trigger={
               <Button variant="ghost" size="icon" className="h-8 w-8">
@@ -201,7 +252,7 @@ function RateRow({
             size="icon"
             className="h-8 w-8 text-destructive"
             onClick={() => {
-              if (confirm("Delete this rate?")) delMut.mutate();
+              if (confirm("Delete this slab?")) delMut.mutate();
             }}
           >
             <Trash2 className="h-4 w-4" />
@@ -212,23 +263,23 @@ function RateRow({
   );
 }
 
-function RateDialog({
+function SlabDialog({
   passphrase,
   initial,
   onSaved,
   trigger,
 }: {
   passphrase: string;
-  initial?: CourierRate;
+  initial?: CourierRateSlab;
   onSaved: () => void;
   trigger: React.ReactNode;
 }) {
   const [open, setOpen] = useState(false);
   const [courier, setCourier] = useState<string>(initial?.courier_name ?? COURIERS[0]);
   const [zone, setZone] = useState<string>(initial?.zone ?? ZONES[0]);
-  const [baseWeight, setBaseWeight] = useState(String(initial?.base_weight_limit ?? 1));
-  const [basePrice, setBasePrice] = useState(String(initial?.base_price ?? 60));
-  const [extraKg, setExtraKg] = useState(String(initial?.extra_kg_price ?? 20));
+  const [minWeight, setMinWeight] = useState(String(initial?.min_weight ?? 0));
+  const [maxWeight, setMaxWeight] = useState(String(initial?.max_weight ?? 0.5));
+  const [price, setPrice] = useState(String(initial?.price ?? 60));
   const [codPercent, setCodPercent] = useState(String(initial?.cod_percent ?? 1));
   const [codFixed, setCodFixed] = useState(String(initial?.cod_fixed_fee ?? 10));
   const [eta, setEta] = useState(initial?.estimated_delivery_time ?? "1-2 days");
@@ -239,19 +290,19 @@ function RateDialog({
   );
   const [active, setActive] = useState(initial?.active ?? true);
 
-  const upsert = useServerFn(upsertRate);
+  const upsert = useServerFn(upsertSlab);
   const mut = useMutation({
     mutationFn: () =>
       upsert({
         data: {
           passphrase,
           id: initial?.id,
-          rate: {
+          slab: {
             courier_name: courier,
             zone,
-            base_weight_limit: Number(baseWeight) || 0,
-            base_price: Number(basePrice) || 0,
-            extra_kg_price: Number(extraKg) || 0,
+            min_weight: Number(minWeight) || 0,
+            max_weight: Number(maxWeight) || 0,
+            price: Number(price) || 0,
             cod_percent: Number(codPercent) || 0,
             cod_fixed_fee: Number(codFixed) || 0,
             estimated_delivery_time: eta || null,
@@ -275,7 +326,7 @@ function RateDialog({
       <DialogTrigger asChild>{trigger}</DialogTrigger>
       <DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-lg">
         <DialogHeader>
-          <DialogTitle>{initial ? "Edit rate" : "Add rate"}</DialogTitle>
+          <DialogTitle>{initial ? "Edit slab" : "Add slab"}</DialogTitle>
         </DialogHeader>
         <form
           onSubmit={(e) => { e.preventDefault(); mut.mutate(); }}
@@ -298,14 +349,14 @@ function RateDialog({
                 </SelectContent>
               </Select>
             </Field>
-            <Field label="Base weight limit (kg)">
-              <Input type="number" step="0.1" value={baseWeight} onChange={(e) => setBaseWeight(e.target.value)} />
+            <Field label="Min weight (kg)">
+              <Input type="number" step="0.1" value={minWeight} onChange={(e) => setMinWeight(e.target.value)} />
             </Field>
-            <Field label="Base price (BDT)">
-              <Input type="number" value={basePrice} onChange={(e) => setBasePrice(e.target.value)} />
+            <Field label="Max weight (kg)">
+              <Input type="number" step="0.1" value={maxWeight} onChange={(e) => setMaxWeight(e.target.value)} />
             </Field>
-            <Field label="Extra per kg (BDT)">
-              <Input type="number" value={extraKg} onChange={(e) => setExtraKg(e.target.value)} />
+            <Field label="Price (BDT)">
+              <Input type="number" value={price} onChange={(e) => setPrice(e.target.value)} />
             </Field>
             <Field label="COD percent (%)">
               <Input type="number" step="0.1" value={codPercent} onChange={(e) => setCodPercent(e.target.value)} />
@@ -337,7 +388,7 @@ function RateDialog({
           </Field>
           <DialogFooter>
             <Button type="submit" disabled={mut.isPending} className="w-full">
-              {mut.isPending ? "Saving…" : "Save rate"}
+              {mut.isPending ? "Saving…" : "Save slab"}
             </Button>
           </DialogFooter>
         </form>
