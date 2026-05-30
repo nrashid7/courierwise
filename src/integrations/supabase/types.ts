@@ -14,7 +14,93 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      courier_rates: {
+        Row: {
+          active: boolean
+          base_price: number
+          base_weight_limit: number
+          cod_fixed_fee: number
+          cod_percent: number
+          courier_name: string
+          created_at: string
+          estimated_delivery_time: string | null
+          extra_kg_price: number
+          id: string
+          last_verified_date: string | null
+          notes: string | null
+          source_url: string | null
+          updated_at: string
+          zone: string
+        }
+        Insert: {
+          active?: boolean
+          base_price?: number
+          base_weight_limit?: number
+          cod_fixed_fee?: number
+          cod_percent?: number
+          courier_name: string
+          created_at?: string
+          estimated_delivery_time?: string | null
+          extra_kg_price?: number
+          id?: string
+          last_verified_date?: string | null
+          notes?: string | null
+          source_url?: string | null
+          updated_at?: string
+          zone: string
+        }
+        Update: {
+          active?: boolean
+          base_price?: number
+          base_weight_limit?: number
+          cod_fixed_fee?: number
+          cod_percent?: number
+          courier_name?: string
+          created_at?: string
+          estimated_delivery_time?: string | null
+          extra_kg_price?: number
+          id?: string
+          last_verified_date?: string | null
+          notes?: string | null
+          source_url?: string | null
+          updated_at?: string
+          zone?: string
+        }
+        Relationships: []
+      }
+      rate_reports: {
+        Row: {
+          actual_amount: number | null
+          courier_name: string
+          created_at: string
+          id: string
+          issue: string
+          reporter_contact: string | null
+          screenshot_note: string | null
+          zone: string | null
+        }
+        Insert: {
+          actual_amount?: number | null
+          courier_name: string
+          created_at?: string
+          id?: string
+          issue: string
+          reporter_contact?: string | null
+          screenshot_note?: string | null
+          zone?: string | null
+        }
+        Update: {
+          actual_amount?: number | null
+          courier_name?: string
+          created_at?: string
+          id?: string
+          issue?: string
+          reporter_contact?: string | null
+          screenshot_note?: string | null
+          zone?: string | null
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
