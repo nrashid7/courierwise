@@ -48,7 +48,6 @@ export const markReportReviewed = createServerFn({ method: "POST" })
     checkAdmin(data.passphrase);
     const { error } = await supabaseAdmin
       .from("rate_reports")
-      // @ts-expect-error reviewed column added via migration; types regenerate after deploy
       .update({ reviewed: data.reviewed })
       .eq("id", data.id);
     if (error) throw new Error(error.message);
