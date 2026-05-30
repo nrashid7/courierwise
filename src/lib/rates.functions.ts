@@ -73,6 +73,8 @@ const reportSchema = z.object({
   zone: z.string().max(50).optional().nullable(),
   issue: z.string().min(3).max(2000),
   actual_amount: z.number().min(0).max(1000000).optional().nullable(),
+  user_weight: z.number().min(0).max(1000).optional().nullable(),
+  user_cod_amount: z.number().min(0).max(10000000).optional().nullable(),
   screenshot_note: z.string().max(1000).optional().nullable(),
   reporter_contact: z.string().max(200).optional().nullable(),
 });
