@@ -1,0 +1,1 @@
+ALTER TABLE public.rate_reports ADD COLUMN IF NOT EXISTS reviewed boolean NOT NULL DEFAULT false;
