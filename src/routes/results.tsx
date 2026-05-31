@@ -472,8 +472,12 @@ function ResultCard({
 
       <div className="mt-4 grid grid-cols-2 gap-2">
         <Stat label="Delivery" value={`৳${quote.deliveryCharge.toFixed(0)}`} />
-        <Stat label="COD fee" value={`৳${quote.codFee.toFixed(0)}`} />
+        <Stat
+          label="COD fee"
+          value={userCod === 0 ? "—" : `৳${quote.codFee.toFixed(0)}`}
+        />
       </div>
+
 
       {quote.slab.notes && (
         <p className="mt-3 rounded-lg bg-secondary px-3 py-2 text-xs leading-5 text-muted-foreground">
