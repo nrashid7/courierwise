@@ -95,11 +95,14 @@ function ResultsPage() {
     },
   });
 
+  const [codMode, setCodMode] = useState<"cod" | "prepaid">("cod");
+  const effectiveCod = codMode === "prepaid" ? 0 : search.cod;
+
   const quotes: SlabQuoteResult[] = data
     ? rankSlabQuotes(data, {
         canonicalZone: search.canonicalZone,
         weight: search.weight,
-        codAmount: search.cod,
+        codAmount: effectiveCod,
       })
     : [];
 
@@ -109,12 +112,13 @@ function ResultsPage() {
         canonical_zone: search.canonicalZone,
         zone_label: zoneLabel,
         weight: search.weight,
-        cod: search.cod,
+        cod: effectiveCod,
+        cod_mode: codMode,
         resultCount: quotes.length,
       });
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [isLoading, search.canonicalZone, search.weight, search.cod]);
+  }, [isLoading, search.canonicalZone, search.weight, effectiveCod, codMode]);
 
   const hasEstimated =
     quotes.length > 0 &&
@@ -135,6 +139,27 @@ function ResultsPage() {
       toast.success("Quote link copied");
     } catch {
       toast.error("Couldn't copy link. Please copy from the address bar.");
+    }
+  };
+
+  const handleCopyWhatsApp = async () => {
+    try {
+      const url = typeof window !== "undefined" ? window.location.href : "";
+      const top = quotes.slice(0, 3);
+      const codLine =
+        codMode === "prepaid"
+          ? "Prepaid"
+          : `COD ৳${search.cod}`;
+      const header = `CourierWise Quote\n${search.weight}kg • ${zoneLabel} • ${codLine}`;
+      const lines = top
+        .map((q) => `${q.courier_name} — ৳${q.total.toFixed(0)}`)
+        .join("\n");
+      const footer = `Rates verified May 2026\n${url}`;
+      const text = `${header}\n\n${lines}\n\n${footer}`;
+      await navigator.clipboard.writeText(text);
+      toast.success("WhatsApp summary copied");
+    } catch {
+      toast.error("Couldn't copy summary. Try again.");
     }
   };
 
