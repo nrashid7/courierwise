@@ -187,20 +187,21 @@ export function confidenceLabel(slab: CourierRateSlab): {
   label: string;
   tone: "success" | "warning" | "muted";
 } {
-  if (slab.verification_status === "official" && slab.confidence_score === "high") {
-    return { label: "Verified Official", tone: "success" };
+  const score = Number(slab.confidence_score) || 0;
+  if (slab.verification_status === "VERIFIED") {
+    return { label: "Verified", tone: "success" };
   }
-  if (slab.verification_status === "community_verified") {
+  if (slab.verification_status === "COMMUNITY_VERIFIED") {
     return { label: "Community Verified", tone: "warning" };
   }
-  if (slab.verification_status === "estimated" || slab.estimated_flag) {
+  if (slab.verification_status === "ESTIMATED" || slab.estimated_flag) {
     return { label: "Estimated", tone: "muted" };
   }
-  if (slab.verification_status === "outdated") {
+  if (slab.verification_status === "OUTDATED") {
     return { label: "Outdated", tone: "warning" };
   }
-  if (slab.verification_status === "disputed") {
+  if (slab.verification_status === "DISPUTED") {
     return { label: "Disputed", tone: "warning" };
   }
-  return { label: "Unverified", tone: "muted" };
+  return { label: score >= 0.5 ? "Likely accurate" : "Unverified", tone: "muted" };
 }
