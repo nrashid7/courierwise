@@ -72,7 +72,14 @@ export const Route = createFileRoute("/results")({
 });
 
 function ResultsPage() {
-  const search = Route.useSearch();
+  const search = Route.useSearch() as {
+    pickup: string;
+    destination: string;
+    canonicalZone: CanonicalZone;
+    weight: number;
+    cod: number;
+    productType?: string;
+  };
   const zoneLabel = CANONICAL_ZONE_LABELS[search.canonicalZone];
 
   const { data, isLoading, error } = useQuery({
