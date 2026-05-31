@@ -610,7 +610,7 @@ function ReportDialog({
       });
       toast.success("Thanks — report submitted.");
       setOpen(false);
-      setIssue(""); setActual(""); setScreenshotNote(""); setReporterContact("");
+      setIssue(""); setActual(""); setScreenshotNote(""); setReporterContact(""); setWebsite("");
     } catch (err) {
       toast.error((err as Error).message);
     } finally {
