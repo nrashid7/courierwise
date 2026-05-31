@@ -634,6 +634,26 @@ function ReportDialog({
           </DialogDescription>
         </DialogHeader>
         <form onSubmit={onSubmit} className="space-y-3">
+          <div
+            aria-hidden="true"
+            style={{
+              position: "absolute",
+              left: "-9999px",
+              height: 0,
+              overflow: "hidden",
+            }}
+          >
+            <Label htmlFor="rd-website">Website</Label>
+            <Input
+              id="rd-website"
+              type="text"
+              tabIndex={-1}
+              autoComplete="off"
+              value={website}
+              onChange={(e) => setWebsite(e.target.value)}
+            />
+          </div>
+
           <div className="space-y-1.5">
             <Label className="text-xs">What was wrong?</Label>
             <Textarea
