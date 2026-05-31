@@ -190,7 +190,8 @@ function ResultsPage() {
               key={q.slab.id}
               quote={q}
               rank={i + 1}
-              zone={search.zone}
+              canonicalZone={search.canonicalZone}
+              zoneLabel={zoneLabel}
               userWeight={search.weight}
               userCod={search.cod}
             />
