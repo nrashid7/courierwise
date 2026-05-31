@@ -84,10 +84,13 @@ function ResultsPage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isLoading, search.zone, search.weight, search.cod]);
 
-  const allSample =
+  const hasEstimated =
     quotes.length > 0 &&
-    quotes.every((q) =>
-      (q.slab.notes ?? "").toLowerCase().includes("sample rate"),
+    quotes.some(
+      (q) =>
+        q.slab.verification_status === "estimated" ||
+        q.slab.estimated_flag ||
+        q.overflow,
     );
 
   const weightOverLimit = search.weight > 3;
@@ -114,19 +117,20 @@ function ResultsPage() {
         </div>
 
         <p className="mt-3 text-xs text-muted-foreground">
-          Rates are estimates based on manually maintained courier rate tables.
+          Rates are based on publicly available courier pricing (verified May 2026).
+          Final charges may vary by parcel size, remote area surcharges, and courier promotions.
         </p>
 
-        {allSample && (
+        {hasEstimated && (
           <div
             role="alert"
             className="mt-3 flex items-start gap-2 rounded-lg border border-warning/40 bg-warning/10 px-3 py-2 text-xs font-medium text-warning-foreground"
           >
             <Info className="mt-0.5 h-4 w-4 shrink-0 text-warning" />
             <p>
-              Verified rates required before public launch — every rate shown
-              here is a sample placeholder. Replace with verified merchant
-              rates before sharing publicly.
+              Some rates below are <strong>estimated</strong> — couriers do not publish full pricing
+              for every weight slab. Verify with your courier before booking, and{" "}
+              <strong>submit a correction</strong> using the button on any card to help us improve accuracy.
             </p>
           </div>
         )}
