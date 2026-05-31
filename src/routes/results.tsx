@@ -216,13 +216,15 @@ function ResultsPage() {
 function ResultCard({
   quote,
   rank,
-  zone,
+  canonicalZone,
+  zoneLabel,
   userWeight,
   userCod,
 }: {
   quote: SlabQuoteResult;
   rank: number;
-  zone: string;
+  canonicalZone: CanonicalZone;
+  zoneLabel: string;
   userWeight: number;
   userCod: number;
 }) {
