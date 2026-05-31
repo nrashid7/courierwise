@@ -83,7 +83,7 @@ export const submitVerification = createServerFn({ method: "POST" })
     return { ok: true };
   });
 
-export const listVerifications = createServerFn({ method: "GET" })
+export const listVerifications = createServerFn({ method: "POST" })
   .inputValidator((input: { passphrase: string }) => input)
   .handler(async ({ data }) => {
     checkAdmin(data.passphrase);
