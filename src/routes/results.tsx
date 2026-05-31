@@ -22,21 +22,43 @@ import { supabase } from "@/integrations/supabase/client";
 import {
   type CourierRateSlab,
   type SlabQuoteResult,
+  type CanonicalZone,
+  CANONICAL_ZONE_LABELS,
   confidenceLabel,
+  legacyZoneToCanonical,
   rankSlabQuotes,
 } from "@/lib/courier";
 import { submitRateReport } from "@/lib/rates.functions";
 import { submitVerification } from "@/lib/verifications.functions";
 import { useServerFn } from "@tanstack/react-start";
 
-const searchSchema = z.object({
-  pickup: z.string().default("Dhaka"),
-  destination: z.string().default("Dhaka"),
-  zone: z.string().default("Inside Dhaka"),
-  weight: z.number().default(1),
-  cod: z.number().default(0),
-  productType: z.string().optional(),
-});
+const CANONICAL_ZONE_ENUM = ["INSIDE_DHAKA", "SUBURBAN", "OUTSIDE_DHAKA", "INTER_DISTRICT"] as const;
+
+const searchSchema = z
+  .object({
+    pickup: z.string().default("Dhaka"),
+    destination: z.string().default("Dhaka"),
+    canonicalZone: z.enum(CANONICAL_ZONE_ENUM).default("INSIDE_DHAKA"),
+    // Backward-compat: old links used a human zone string.
+    zone: z.string().optional(),
+    weight: z.number().default(1),
+    cod: z.number().default(0),
+    productType: z.string().optional(),
+  })
+  .transform((s) => {
+    // If only legacy zone is present, map it to canonical.
+    const canonical: CanonicalZone =
+      s.canonicalZone ??
+      (s.zone ? legacyZoneToCanonical(s.zone) : "INSIDE_DHAKA");
+    return {
+      pickup: s.pickup,
+      destination: s.destination,
+      canonicalZone: canonical,
+      weight: s.weight,
+      cod: s.cod,
+      productType: s.productType,
+    };
+  });
 
 export const Route = createFileRoute("/results")({
   validateSearch: (search) => searchSchema.parse(search),
@@ -50,15 +72,24 @@ export const Route = createFileRoute("/results")({
 });
 
 function ResultsPage() {
-  const search = Route.useSearch();
+  const search = Route.useSearch() as {
+    pickup: string;
+    destination: string;
+    canonicalZone: CanonicalZone;
+    weight: number;
+    cod: number;
+    productType?: string;
+  };
+  const zoneLabel = CANONICAL_ZONE_LABELS[search.canonicalZone];
 
   const { data, isLoading, error } = useQuery({
-    queryKey: ["courier_rate_slabs"],
+    queryKey: ["courier_rate_slabs", search.canonicalZone],
     queryFn: async () => {
       const { data, error } = await supabase
         .from("courier_rate_slabs")
         .select("*")
-        .eq("active", true);
+        .eq("active", true)
+        .eq("canonical_zone", search.canonicalZone);
       if (error) throw error;
       return data as CourierRateSlab[];
     },
@@ -66,7 +97,7 @@ function ResultsPage() {
 
   const quotes: SlabQuoteResult[] = data
     ? rankSlabQuotes(data, {
-        zone: search.zone,
+        canonicalZone: search.canonicalZone,
         weight: search.weight,
         codAmount: search.cod,
       })
@@ -75,14 +106,15 @@ function ResultsPage() {
   useEffect(() => {
     if (!isLoading) {
       trackEvent("results_viewed", {
-        zone: search.zone,
+        canonical_zone: search.canonicalZone,
+        zone_label: zoneLabel,
         weight: search.weight,
         cod: search.cod,
         resultCount: quotes.length,
       });
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [isLoading, search.zone, search.weight, search.cod]);
+  }, [isLoading, search.canonicalZone, search.weight, search.cod]);
 
   const hasEstimated =
     quotes.length > 0 &&
@@ -92,6 +124,7 @@ function ResultsPage() {
         q.slab.estimated_flag ||
         q.overflow,
     );
+
 
   const weightOverLimit = search.weight > 3;
 
@@ -109,7 +142,7 @@ function ResultsPage() {
       <main className="mx-auto max-w-2xl px-4 pb-16">
         <div className="rounded-xl border bg-card p-3 text-xs text-muted-foreground">
           <div className="flex flex-wrap gap-x-4 gap-y-1">
-            <span><span className="text-foreground font-medium">Zone:</span> {search.zone}</span>
+            <span><span className="text-foreground font-medium">Zone:</span> {zoneLabel}</span>
             <span><span className="text-foreground font-medium">Weight:</span> {search.weight} kg</span>
             <span><span className="text-foreground font-medium">COD:</span> ৳{search.cod}</span>
             <span><span className="text-foreground font-medium">Route:</span> {search.pickup} → {search.destination}</span>
@@ -157,7 +190,8 @@ function ResultsPage() {
               key={q.slab.id}
               quote={q}
               rank={i + 1}
-              zone={search.zone}
+              canonicalZone={search.canonicalZone}
+              zoneLabel={zoneLabel}
               userWeight={search.weight}
               userCod={search.cod}
             />
@@ -182,13 +216,15 @@ function ResultsPage() {
 function ResultCard({
   quote,
   rank,
-  zone,
+  canonicalZone,
+  zoneLabel,
   userWeight,
   userCod,
 }: {
   quote: SlabQuoteResult;
   rank: number;
-  zone: string;
+  canonicalZone: CanonicalZone;
+  zoneLabel: string;
   userWeight: number;
   userCod: number;
 }) {
@@ -268,12 +304,14 @@ function ResultCard({
           <VerifyDialog
             slabId={quote.slab.id}
             courierName={quote.courier_name}
-            zone={zone}
+            canonicalZone={canonicalZone}
+            zoneLabel={zoneLabel}
             userWeight={userWeight}
           />
           <ReportDialog
             courierName={quote.courier_name}
-            zone={zone}
+            canonicalZone={canonicalZone}
+            zoneLabel={zoneLabel}
             userWeight={userWeight}
             userCod={userCod}
           />
@@ -294,12 +332,14 @@ function Stat({ label, value }: { label: string; value: string }) {
 
 function ReportDialog({
   courierName,
-  zone,
+  canonicalZone,
+  zoneLabel,
   userWeight,
   userCod,
 }: {
   courierName: string;
-  zone: string;
+  canonicalZone: CanonicalZone;
+  zoneLabel: string;
   userWeight: number;
   userCod: number;
 }) {
@@ -322,7 +362,7 @@ function ReportDialog({
       await submit({
         data: {
           courier_name: courierName,
-          zone,
+          zone: canonicalZone,
           issue: issue.trim(),
           actual_amount: actual ? Number(actual) : null,
           user_weight: userWeight,
@@ -331,7 +371,11 @@ function ReportDialog({
           reporter_contact: reporterContact.trim() || null,
         },
       });
-      trackEvent("rate_report_submitted", { courier: courierName, zone });
+      trackEvent("rate_report_submitted", {
+        courier: courierName,
+        canonical_zone: canonicalZone,
+        zone_label: zoneLabel,
+      });
       toast.success("Thanks — report submitted.");
       setOpen(false);
       setIssue(""); setActual(""); setScreenshotNote(""); setReporterContact("");
@@ -341,6 +385,7 @@ function ReportDialog({
       setSubmitting(false);
     }
   };
+
 
   return (
     <Dialog open={open} onOpenChange={setOpen}>
@@ -410,12 +455,14 @@ function ReportDialog({
 function VerifyDialog({
   slabId,
   courierName,
-  zone,
+  canonicalZone,
+  zoneLabel,
   userWeight,
 }: {
   slabId: string;
   courierName: string;
-  zone: string;
+  canonicalZone: CanonicalZone;
+  zoneLabel: string;
   userWeight: number;
 }) {
   const [open, setOpen] = useState(false);
@@ -452,7 +499,7 @@ function VerifyDialog({
         data: {
           slab_id: slabId,
           courier_name: courierName,
-          zone,
+          zone: canonicalZone,
           weight: userWeight,
           submitted_price: submittedPrice ? Number(submittedPrice) : null,
           evidence_url: trimmedUrl || null,
@@ -460,6 +507,7 @@ function VerifyDialog({
           notes: notes.trim() || null,
           website,
         },
+
       });
       toast.success("Thanks — verification submitted for review.");
       setOpen(false);
@@ -482,7 +530,7 @@ function VerifyDialog({
         <DialogHeader>
           <DialogTitle>Submit a verified rate</DialogTitle>
           <DialogDescription>
-            Help confirm or correct the {courierName} rate for {zone}.
+            Help confirm or correct the {courierName} rate for {zoneLabel}.
           </DialogDescription>
         </DialogHeader>
         <form onSubmit={onSubmit} className="space-y-3">

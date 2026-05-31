@@ -12,9 +12,16 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { CITIES, ZONES } from "@/lib/courier";
+import { CITIES, CANONICAL_ZONE_LABELS, type CanonicalZone } from "@/lib/courier";
 import { trackEvent } from "@/lib/analytics";
 import { Disclaimer } from "@/components/Disclaimer";
+
+const CANONICAL_ZONES: CanonicalZone[] = [
+  "INSIDE_DHAKA",
+  "SUBURBAN",
+  "OUTSIDE_DHAKA",
+  "INTER_DISTRICT",
+];
 
 export const Route = createFileRoute("/compare")({
   head: () => ({
@@ -33,7 +40,7 @@ function ComparePage() {
   const navigate = useNavigate();
   const [pickup, setPickup] = useState("Dhaka");
   const [destination, setDestination] = useState("Dhaka");
-  const [zone, setZone] = useState<string>("Inside Dhaka");
+  const [canonicalZone, setCanonicalZone] = useState<CanonicalZone>("INSIDE_DHAKA");
   const [weight, setWeight] = useState("1");
   const [cod, setCod] = useState("0");
   const [productType, setProductType] = useState("");
@@ -53,7 +60,8 @@ function ComparePage() {
       return;
     }
     trackEvent("compare_submitted", {
-      zone,
+      canonical_zone: canonicalZone,
+      zone_label: CANONICAL_ZONE_LABELS[canonicalZone],
       weight: weightNum,
       cod: codNum,
       pickup,
@@ -64,7 +72,7 @@ function ComparePage() {
       search: {
         pickup,
         destination,
-        zone,
+        canonicalZone,
         weight: weightNum,
         cod: codNum,
         productType: productType || undefined,
@@ -106,10 +114,15 @@ function ComparePage() {
           </div>
 
           <Field label="Delivery zone">
-            <Select value={zone} onValueChange={setZone}>
+            <Select
+              value={canonicalZone}
+              onValueChange={(v) => setCanonicalZone(v as CanonicalZone)}
+            >
               <SelectTrigger><SelectValue /></SelectTrigger>
               <SelectContent>
-                {ZONES.map((z) => <SelectItem key={z} value={z}>{z}</SelectItem>)}
+                {CANONICAL_ZONES.map((z) => (
+                  <SelectItem key={z} value={z}>{CANONICAL_ZONE_LABELS[z]}</SelectItem>
+                ))}
               </SelectContent>
             </Select>
             <p className="text-[11px] text-muted-foreground">

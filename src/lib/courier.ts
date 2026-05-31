@@ -89,7 +89,7 @@ export interface CourierRateSlab {
 }
 
 export interface QuoteInput {
-  zone: string;
+  canonicalZone: CanonicalZone;
   weight: number;
   codAmount: number;
 }
@@ -105,16 +105,27 @@ export interface SlabQuoteResult {
   overflow: boolean;
 }
 
+/** Map a legacy display zone string to its canonical zone, if recognised. */
+export function legacyZoneToCanonical(zone: string | undefined | null): CanonicalZone {
+  switch ((zone ?? "").trim()) {
+    case "Inside Dhaka":
+      return "INSIDE_DHAKA";
+    case "Dhaka Suburbs":
+    case "Sub-Dhaka":
+      return "SUBURBAN";
+    case "Outside Dhaka":
+      return "OUTSIDE_DHAKA";
+    case "Outside Dhaka → Outside Dhaka":
+    case "Inter-District":
+      return "INTER_DISTRICT";
+    default:
+      return "INSIDE_DHAKA";
+  }
+}
+
 /**
  * Slab-based pricing engine with dynamic extra-kg pricing and minimum-charge support.
- *
- * For each courier in the selected zone:
- *  - find slab where min_weight < weight <= max_weight (min=0 inclusive); OR
- *  - if weight exceeds every slab, use the largest slab + (weight - max) * extra_kg_price.
- *  - delivery charge = max(min_charge, slab price + overflow kg charge).
- *  - COD fee = max(cod_fixed_fee, codAmount * cod_percent / 100).
- *
- * Returns one result per courier, sorted cheapest first.
+ * Filters by canonical_zone (zone-normalisation safe).
  */
 export function rankSlabQuotes(
   slabs: CourierRateSlab[],
@@ -122,7 +133,7 @@ export function rankSlabQuotes(
 ): SlabQuoteResult[] {
   const byCourier = new Map<string, CourierRateSlab[]>();
   for (const s of slabs) {
-    if (!s.active || s.zone !== input.zone) continue;
+    if (!s.active || s.canonical_zone !== input.canonicalZone) continue;
     if (!byCourier.has(s.courier_name)) byCourier.set(s.courier_name, []);
     byCourier.get(s.courier_name)!.push(s);
   }
