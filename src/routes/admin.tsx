@@ -176,7 +176,7 @@ function AdminPanel({ passphrase, onLock }: { passphrase: string; onLock: () => 
       </header>
 
       <main className="mx-auto max-w-4xl px-4 pb-16">
-        <div className="mb-3 grid gap-2 sm:grid-cols-2">
+        <div className="mb-3 grid gap-2 sm:grid-cols-2 lg:grid-cols-4">
           <div>
             <Label className="text-xs">Courier</Label>
             <Select value={courierFilter} onValueChange={setCourierFilter}>
@@ -196,6 +196,22 @@ function AdminPanel({ passphrase, onLock }: { passphrase: string; onLock: () => 
                 {ZONES.map((z) => <SelectItem key={z} value={z}>{z}</SelectItem>)}
               </SelectContent>
             </Select>
+          </div>
+          <div>
+            <Label className="text-xs">Verification</Label>
+            <Select value={statusFilter} onValueChange={setStatusFilter}>
+              <SelectTrigger><SelectValue /></SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All statuses</SelectItem>
+                {VERIFICATION_STATUSES.map((s) => (
+                  <SelectItem key={s} value={s}>{s.replace("_", " ")}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+          <div className="flex items-end gap-2 pb-1">
+            <Switch checked={estimatedOnly} onCheckedChange={setEstimatedOnly} id="est-only" />
+            <Label htmlFor="est-only" className="text-xs">Estimated only</Label>
           </div>
         </div>
 
