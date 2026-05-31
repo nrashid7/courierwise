@@ -85,6 +85,7 @@ export interface CourierRateSlab {
   last_verified_date: string | null;
   last_verified_at: string | null;
   active: boolean;
+  canonical_zone: CanonicalZone | string;
 }
 
 export interface QuoteInput {
