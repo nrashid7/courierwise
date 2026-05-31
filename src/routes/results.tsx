@@ -332,12 +332,14 @@ function Stat({ label, value }: { label: string; value: string }) {
 
 function ReportDialog({
   courierName,
-  zone,
+  canonicalZone,
+  zoneLabel,
   userWeight,
   userCod,
 }: {
   courierName: string;
-  zone: string;
+  canonicalZone: CanonicalZone;
+  zoneLabel: string;
   userWeight: number;
   userCod: number;
 }) {
@@ -360,7 +362,7 @@ function ReportDialog({
       await submit({
         data: {
           courier_name: courierName,
-          zone,
+          zone: canonicalZone,
           issue: issue.trim(),
           actual_amount: actual ? Number(actual) : null,
           user_weight: userWeight,
@@ -369,7 +371,11 @@ function ReportDialog({
           reporter_contact: reporterContact.trim() || null,
         },
       });
-      trackEvent("rate_report_submitted", { courier: courierName, zone });
+      trackEvent("rate_report_submitted", {
+        courier: courierName,
+        canonical_zone: canonicalZone,
+        zone_label: zoneLabel,
+      });
       toast.success("Thanks — report submitted.");
       setOpen(false);
       setIssue(""); setActual(""); setScreenshotNote(""); setReporterContact("");
@@ -379,6 +385,7 @@ function ReportDialog({
       setSubmitting(false);
     }
   };
+
 
   return (
     <Dialog open={open} onOpenChange={setOpen}>
