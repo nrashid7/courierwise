@@ -423,6 +423,7 @@ function VerifyDialog({
   const [evidenceUrl, setEvidenceUrl] = useState("");
   const [submitterContact, setSubmitterContact] = useState("");
   const [notes, setNotes] = useState("");
+  const [website, setWebsite] = useState(""); // honeypot
   const [submitting, setSubmitting] = useState(false);
   const submit = useServerFn(submitVerification);
 
