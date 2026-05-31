@@ -122,6 +122,7 @@ export function legacyZoneToCanonical(zone: string | undefined | null): Canonica
       return "INTER_DISTRICT";
     default:
       return "INSIDE_DHAKA";
+  }
 }
 
 /**
@@ -141,7 +142,6 @@ export function inferZone(
   if (p === DHAKA && SUBURBAN.includes(d)) return "SUBURBAN";
   if (p === DHAKA && d !== DHAKA) return "OUTSIDE_DHAKA";
   return "INTER_DISTRICT";
-}
 }
 
 /**
