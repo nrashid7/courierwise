@@ -22,7 +22,7 @@ export interface RateReport {
   created_at: string;
 }
 
-export const listRateReports = createServerFn({ method: "GET" })
+export const listRateReports = createServerFn({ method: "POST" })
   .inputValidator((input: { passphrase: string }) => input)
   .handler(async ({ data }) => {
     checkAdmin(data.passphrase);
