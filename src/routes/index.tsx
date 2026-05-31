@@ -186,7 +186,7 @@ function Feature({
       <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-accent text-accent-foreground">
         {icon}
       </div>
-      <h3 className="mt-4 text-sm font-semibold">{title}</h3>
+      <h2 className="mt-4 text-sm font-semibold">{title}</h2>
       <p className="mt-1.5 text-sm leading-6 text-muted-foreground">{text}</p>
     </div>
   );
