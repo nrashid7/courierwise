@@ -135,8 +135,11 @@ export function rankSlabQuotes(
     const minCharge = Number(slab.min_charge) || 0;
     const deliveryCharge = Math.max(minCharge, basePrice + overflowCharge);
 
-    const percentFee = (input.codAmount * Number(slab.cod_percent || 0)) / 100;
-    const codFee = Math.max(Number(slab.cod_fixed_fee) || 0, percentFee);
+    let codFee = 0;
+    if (input.codAmount > 0) {
+      const percentFee = (input.codAmount * Number(slab.cod_percent || 0)) / 100;
+      codFee = Math.max(Number(slab.cod_fixed_fee) || 0, percentFee);
+    }
     const total = deliveryCharge + codFee;
 
     const weightRangeLabel = overflow
