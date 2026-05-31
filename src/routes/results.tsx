@@ -413,11 +413,28 @@ function ResultCard({
         <p className="mt-3 text-xs text-muted-foreground">{quote.slab.notes}</p>
       )}
 
+      {quote.courier_name === "Delivery Tiger" && canonicalZone !== "INSIDE_DHAKA" && (
+        <p className="mt-2 text-[11px] text-muted-foreground">
+          Flat rate pricing across Bangladesh.
+        </p>
+      )}
+
+      {(() => {
+        const freshness = getFreshness(quote.slab.last_verified_at, quote.slab.last_verified_date);
+        if (!freshness) return null;
+        const toneClass =
+          freshness.tone === "fresh"
+            ? "text-emerald-700 dark:text-emerald-400"
+            : freshness.tone === "old"
+              ? "text-destructive"
+              : "text-muted-foreground";
+        return (
+          <p className={`mt-2 text-[11px] ${toneClass}`}>{freshness.label}</p>
+        );
+      })()}
+
       <div className="mt-3 flex items-center justify-between gap-2">
         <div className="flex flex-col gap-0.5 text-[11px] text-muted-foreground">
-          {quote.slab.last_verified_date && (
-            <span>Last verified: {quote.slab.last_verified_date}</span>
-          )}
           {quote.slab.source_url && (
             <a
               href={quote.slab.source_url}
