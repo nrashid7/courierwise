@@ -11,10 +11,19 @@ const reportSchema = z.object({
   user_cod_amount: z.number().min(0).max(10000000).optional().nullable(),
   screenshot_note: z.string().max(1000).optional().nullable(),
   reporter_contact: z.string().max(200).optional().nullable(),
+  website: z.string().max(0, "Spam detected").optional(),
 });
 
 export const submitRateReport = createServerFn({ method: "POST" })
-  .inputValidator((input: unknown) => reportSchema.parse(input))
+  .inputValidator((input: unknown) => {
+    const parsed = reportSchema.safeParse(input);
+    if (!parsed.success) {
+      const msg = parsed.error.issues[0]?.message ?? "Invalid submission";
+      throw new Error(msg);
+    }
+    const { website: _hp, ...rest } = parsed.data;
+    return rest;
+  })
   .handler(async ({ data }) => {
     const { getRequestHeader } = await import("@tanstack/react-start/server");
     const ip =
