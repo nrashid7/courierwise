@@ -22,9 +22,11 @@ import { supabase } from "@/integrations/supabase/client";
 import {
   type CourierRateSlab,
   type SlabQuoteResult,
+  confidenceLabel,
   rankSlabQuotes,
 } from "@/lib/courier";
 import { submitRateReport } from "@/lib/rates.functions";
+import { submitVerification } from "@/lib/verifications.functions";
 import { useServerFn } from "@tanstack/react-start";
 
 const searchSchema = z.object({
