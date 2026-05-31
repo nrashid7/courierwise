@@ -164,6 +164,22 @@ function ResultsPage() {
     }
   };
 
+  const verificationLabel = (() => {
+    let newest: number | null = null;
+    for (const q of quotes) {
+      const raw = q.slab.last_verified_date ?? q.slab.last_verified_at;
+      if (!raw) continue;
+      const t = new Date(raw).getTime();
+      if (!Number.isNaN(t) && (newest === null || t > newest)) newest = t;
+    }
+    if (newest === null) return "Rates should be verified before booking";
+    const monthYear = new Date(newest).toLocaleDateString("en-US", {
+      month: "long",
+      year: "numeric",
+    });
+    return `Rates verified ${monthYear}`;
+  })();
+
   const handleCopyWhatsApp = async () => {
     try {
       const url = typeof window !== "undefined" ? window.location.href : "";
@@ -176,7 +192,7 @@ function ResultsPage() {
       const lines = top
         .map((q) => `${q.courier_name} — ৳${q.total.toFixed(0)}`)
         .join("\n");
-      const footer = `Rates verified May 2026\n${url}`;
+      const footer = `${verificationLabel}\n${url}`;
       const text = `${header}\n\n${lines}\n\n${footer}`;
       await navigator.clipboard.writeText(text);
       toast.success("WhatsApp summary copied");
@@ -250,10 +266,10 @@ function ResultsPage() {
         </section>
 
         <p className="mt-3 text-xs text-muted-foreground">
-          Rates are based on publicly available courier pricing (verified May 2026).
-          Final charges may vary by parcel size, remote area surcharges, and courier
-          promotions.
+          {verificationLabel}. Final charges may vary by parcel size, remote area
+          surcharges, and courier promotions.
         </p>
+
 
         {hasEstimated && (
           <div
@@ -456,8 +472,12 @@ function ResultCard({
 
       <div className="mt-4 grid grid-cols-2 gap-2">
         <Stat label="Delivery" value={`৳${quote.deliveryCharge.toFixed(0)}`} />
-        <Stat label="COD fee" value={`৳${quote.codFee.toFixed(0)}`} />
+        <Stat
+          label="COD fee"
+          value={userCod === 0 ? "—" : `৳${quote.codFee.toFixed(0)}`}
+        />
       </div>
+
 
       {quote.slab.notes && (
         <p className="mt-3 rounded-lg bg-secondary px-3 py-2 text-xs leading-5 text-muted-foreground">
@@ -556,8 +576,10 @@ function ReportDialog({
   const [actual, setActual] = useState("");
   const [screenshotNote, setScreenshotNote] = useState("");
   const [reporterContact, setReporterContact] = useState("");
+  const [website, setWebsite] = useState(""); // honeypot
   const [submitting, setSubmitting] = useState(false);
   const submit = useServerFn(submitRateReport);
+
 
   const onSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -577,7 +599,9 @@ function ReportDialog({
           user_cod_amount: userCod,
           screenshot_note: screenshotNote.trim() || null,
           reporter_contact: reporterContact.trim() || null,
+          website,
         },
+
       });
       trackEvent("rate_report_submitted", {
         courier: courierName,
@@ -586,7 +610,7 @@ function ReportDialog({
       });
       toast.success("Thanks — report submitted.");
       setOpen(false);
-      setIssue(""); setActual(""); setScreenshotNote(""); setReporterContact("");
+      setIssue(""); setActual(""); setScreenshotNote(""); setReporterContact(""); setWebsite("");
     } catch (err) {
       toast.error((err as Error).message);
     } finally {
@@ -610,6 +634,26 @@ function ReportDialog({
           </DialogDescription>
         </DialogHeader>
         <form onSubmit={onSubmit} className="space-y-3">
+          <div
+            aria-hidden="true"
+            style={{
+              position: "absolute",
+              left: "-9999px",
+              height: 0,
+              overflow: "hidden",
+            }}
+          >
+            <Label htmlFor="rd-website">Website</Label>
+            <Input
+              id="rd-website"
+              type="text"
+              tabIndex={-1}
+              autoComplete="off"
+              value={website}
+              onChange={(e) => setWebsite(e.target.value)}
+            />
+          </div>
+
           <div className="space-y-1.5">
             <Label className="text-xs">What was wrong?</Label>
             <Textarea
