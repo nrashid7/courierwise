@@ -33,13 +33,35 @@ export const CITIES = [
 ];
 
 export type VerificationStatus =
-  | "official"
-  | "community_verified"
-  | "estimated"
-  | "outdated"
-  | "disputed";
+  | "VERIFIED"
+  | "COMMUNITY_VERIFIED"
+  | "ESTIMATED"
+  | "OUTDATED"
+  | "DISPUTED";
 
-export type ConfidenceScore = "high" | "medium" | "low";
+/** Numeric confidence 0..1. */
+export type ConfidenceScore = number;
+
+export type CanonicalZone =
+  | "INSIDE_DHAKA"
+  | "SUBURBAN"
+  | "OUTSIDE_DHAKA"
+  | "INTER_DISTRICT";
+
+export const CANONICAL_ZONE_LABELS: Record<CanonicalZone, string> = {
+  INSIDE_DHAKA: "Inside Dhaka",
+  SUBURBAN: "Dhaka Suburbs",
+  OUTSIDE_DHAKA: "Outside Dhaka",
+  INTER_DISTRICT: "Outside Dhaka → Outside Dhaka",
+};
+
+export const VERIFICATION_STATUSES: VerificationStatus[] = [
+  "VERIFIED",
+  "COMMUNITY_VERIFIED",
+  "ESTIMATED",
+  "OUTDATED",
+  "DISPUTED",
+];
 
 export interface CourierRateSlab {
   id: string;
