@@ -164,6 +164,22 @@ function ResultsPage() {
     }
   };
 
+  const verificationLabel = (() => {
+    let newest: number | null = null;
+    for (const q of quotes) {
+      const raw = q.slab.last_verified_date ?? q.slab.last_verified_at;
+      if (!raw) continue;
+      const t = new Date(raw).getTime();
+      if (!Number.isNaN(t) && (newest === null || t > newest)) newest = t;
+    }
+    if (newest === null) return "Rates should be verified before booking";
+    const monthYear = new Date(newest).toLocaleDateString("en-US", {
+      month: "long",
+      year: "numeric",
+    });
+    return `Rates verified ${monthYear}`;
+  })();
+
   const handleCopyWhatsApp = async () => {
     try {
       const url = typeof window !== "undefined" ? window.location.href : "";
@@ -176,7 +192,7 @@ function ResultsPage() {
       const lines = top
         .map((q) => `${q.courier_name} — ৳${q.total.toFixed(0)}`)
         .join("\n");
-      const footer = `Rates verified May 2026\n${url}`;
+      const footer = `${verificationLabel}\n${url}`;
       const text = `${header}\n\n${lines}\n\n${footer}`;
       await navigator.clipboard.writeText(text);
       toast.success("WhatsApp summary copied");
