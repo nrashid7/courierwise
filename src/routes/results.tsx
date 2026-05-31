@@ -314,12 +314,22 @@ function ResultsPage() {
           </p>
         )}
 
-        <div className="mt-4 space-y-3">
+        {!isLoading && quotes.length > 0 && (
+          <div className="mt-6">
+            <h2 className="text-base font-semibold tracking-tight">Courier options</h2>
+            <p className="mt-0.5 text-xs text-muted-foreground">
+              Ranked from lowest total cost to highest.
+            </p>
+          </div>
+        )}
+
+        <div className="mt-3 space-y-3">
           {quotes.map((q, i) => (
             <ResultCard
               key={q.slab.id}
               quote={q}
               rank={i + 1}
+              cheapestTotal={quotes[0]?.total ?? q.total}
               canonicalZone={search.canonicalZone}
               zoneLabel={zoneLabel}
               userWeight={search.weight}
@@ -367,6 +377,7 @@ function SummaryChip({ label, value }: { label: string; value: string }) {
 function ResultCard({
   quote,
   rank,
+  cheapestTotal,
   canonicalZone,
   zoneLabel,
   userWeight,
@@ -374,12 +385,14 @@ function ResultCard({
 }: {
   quote: SlabQuoteResult;
   rank: number;
+  cheapestTotal: number;
   canonicalZone: CanonicalZone;
   zoneLabel: string;
   userWeight: number;
   userCod: number;
 }) {
   const cheapest = rank === 1;
+  const diff = Math.max(0, Math.round(quote.total - cheapestTotal));
   const conf = confidenceLabel(quote.slab);
   const toneClasses =
     conf.tone === "success"
@@ -390,23 +403,26 @@ function ResultCard({
 
   return (
     <div
-      className={`rounded-2xl border bg-card p-4 shadow-sm transition ${
-        cheapest ? "border-primary shadow-primary/10 ring-2 ring-primary/15" : ""
+      className={`rounded-2xl border bg-card shadow-sm transition ${
+        cheapest
+          ? "border-primary p-4 shadow-primary/10 ring-2 ring-primary/15"
+          : "p-3"
       }`}
     >
       <div className="flex items-start justify-between gap-4">
         <div className="min-w-0">
           <div className="flex flex-wrap items-center gap-2">
-            <span className="rounded-full bg-secondary px-2.5 py-1 text-xs font-semibold text-secondary-foreground">
-              #{rank}
-            </span>
-            <h3 className="text-lg font-bold tracking-tight">{quote.courier_name}</h3>
-            {cheapest && (
+            {cheapest ? (
               <span className="inline-flex items-center gap-1 rounded-full bg-primary px-2.5 py-1 text-[11px] font-bold uppercase text-primary-foreground">
                 <BadgeCheck className="h-3.5 w-3.5" aria-hidden="true" />
-                Best price
+                Cheapest
+              </span>
+            ) : (
+              <span className="rounded-full bg-secondary px-2.5 py-1 text-xs font-semibold text-secondary-foreground">
+                #{rank}
               </span>
             )}
+            <h3 className={`font-bold tracking-tight ${cheapest ? "text-lg" : "text-base"}`}>{quote.courier_name}</h3>
             <span
               className={`inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-[11px] font-semibold ${toneClasses}`}
               title={`Verification: ${quote.slab.verification_status} - Confidence: ${quote.slab.confidence_score}`}
@@ -427,9 +443,14 @@ function ResultCard({
 
         <div className="shrink-0 text-right">
           <div className="text-xs font-medium text-muted-foreground">Total</div>
-          <div className="text-2xl font-black tabular-nums">
+          <div className={`font-black tabular-nums ${cheapest ? "text-2xl" : "text-xl"}`}>
             ৳{quote.total.toFixed(0)}
           </div>
+          {!cheapest && diff > 0 && (
+            <div className="text-[11px] font-medium text-muted-foreground">
+              ৳{diff} more than cheapest
+            </div>
+          )}
         </div>
       </div>
 
