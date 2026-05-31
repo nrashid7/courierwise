@@ -1,6 +1,5 @@
-import { createFileRoute, Link } from "@tanstack/react-router";
-import { ArrowRight, Truck } from "lucide-react";
-import { Button } from "@/components/ui/button";
+import { createFileRoute } from "@tanstack/react-router";
+import { MarketingHeader, MarketingFooter } from "@/components/MarketingHeader";
 
 export const Route = createFileRoute("/privacy")({
   head: () => ({
@@ -9,13 +8,13 @@ export const Route = createFileRoute("/privacy")({
       {
         name: "description",
         content:
-          "How CourierWise handles data: anonymous analytics, rate limiting, and quote submissions. We do not sell personal data.",
+          "Learn what CourierWise collects, why it is collected, and how merchant submission and analytics data are handled.",
       },
       { property: "og:title", content: "Privacy Policy — CourierWise" },
       {
         property: "og:description",
         content:
-          "How CourierWise handles data. We do not sell personal data.",
+          "Learn what CourierWise collects, why it is collected, and how merchant submission and analytics data are handled.",
       },
       { property: "og:url", content: "https://courierwise.lovable.app/privacy" },
     ],
@@ -27,71 +26,118 @@ export const Route = createFileRoute("/privacy")({
 function PrivacyPage() {
   return (
     <div className="min-h-dvh bg-background">
-      <header className="mx-auto flex max-w-3xl items-center justify-between px-4 py-4 sm:px-6">
-        <Link to="/" className="flex items-center gap-2.5">
-          <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-primary text-primary-foreground shadow-sm">
-            <Truck className="h-5 w-5" aria-hidden="true" />
-          </div>
-          <p className="text-base font-bold leading-none tracking-tight">CourierWise</p>
-        </Link>
-        <Link to="/compare">
-          <Button variant="outline" size="sm" className="h-9">
-            Compare
-            <ArrowRight className="h-4 w-4" aria-hidden="true" />
-          </Button>
-        </Link>
-      </header>
-
+      <MarketingHeader maxWidth="max-w-3xl" />
       <main className="mx-auto max-w-3xl px-4 pb-16 pt-6 sm:px-6 sm:pt-10">
         <h1 className="text-3xl font-bold tracking-tight sm:text-4xl">Privacy Policy</h1>
-        <p className="mt-3 text-sm text-muted-foreground">Last updated: May 2026</p>
+        <p className="mt-2 text-xs text-muted-foreground">Last updated: May 2026</p>
 
-        <section className="mt-8">
-          <h2 className="text-xl font-semibold">Data we collect</h2>
-          <ul className="mt-3 list-disc space-y-1.5 pl-5 leading-7 text-muted-foreground">
-            <li>Anonymous usage analytics (page views, feature events).</li>
-            <li>IP address for rate limiting and abuse prevention.</li>
-            <li>Quote form inputs (route, weight, COD amount) you submit.</li>
-            <li>Courier rate verification submissions you contribute.</li>
-          </ul>
-        </section>
-
-        <section className="mt-8">
-          <h2 className="text-xl font-semibold">How we use it</h2>
-          <ul className="mt-3 list-disc space-y-1.5 pl-5 leading-7 text-muted-foreground">
-            <li>Improve quote accuracy and slab coverage.</li>
-            <li>Prevent abuse, spam, and automated scraping.</li>
-            <li>Understand which features merchants actually use.</li>
-          </ul>
-        </section>
-
-        <section className="mt-8">
-          <h2 className="text-xl font-semibold">No selling of data</h2>
-          <p className="mt-3 leading-7 text-muted-foreground">
-            CourierWise does not sell personal data.
+        <div className="mt-5 space-y-4 leading-7 text-muted-foreground">
+          <p>
+            CourierWise is designed to be lightweight and low-friction. You can
+            use core comparison features without creating an account.
           </p>
-        </section>
+          <p>
+            This page explains what information CourierWise may collect, why it
+            is collected, and how it is used.
+          </p>
+        </div>
 
-        <section className="mt-8">
-          <h2 className="text-xl font-semibold">Contact</h2>
-          <p className="mt-3 leading-7 text-muted-foreground">
-            Privacy questions? Email{" "}
+        <Section title="What CourierWise collects">
+          <p>CourierWise may collect:</p>
+          <ul className="list-disc space-y-1.5 pl-5">
+            <li>
+              Quote inputs such as pickup city, destination city, parcel weight,
+              COD amount, and selected zone when you use comparison features.
+            </li>
+            <li>
+              Product analytics events, such as quote generation and bulk summary
+              copy events, to understand usage and improve the product.
+            </li>
+            <li>
+              Verification or correction submissions you choose to send,
+              including courier name, zone, submitted price, evidence URL,
+              optional contact info, and notes.
+            </li>
+            <li>
+              Technical anti-abuse data such as IP address for rate-limiting and
+              spam prevention on submissions.
+            </li>
+          </ul>
+        </Section>
+
+        <Section title="Why this information is collected">
+          <p>CourierWise uses this information to:</p>
+          <ul className="list-disc space-y-1.5 pl-5">
+            <li>Generate courier comparisons and bulk quote summaries.</li>
+            <li>
+              Improve product quality and understand which features merchants
+              use most.
+            </li>
+            <li>Review reported pricing corrections and verification submissions.</li>
+            <li>Prevent spam, abuse, and repeated automated submissions.</li>
+          </ul>
+        </Section>
+
+        <Section title="What CourierWise does not do">
+          <p>CourierWise does not require user accounts for normal quote usage.</p>
+          <p>CourierWise does not sell your personal information.</p>
+          <p>CourierWise does not process courier bookings or payments.</p>
+        </Section>
+
+        <Section title="Verification submissions">
+          <p>
+            If you submit a rate correction or verification, the information you
+            provide may be stored and reviewed by the CourierWise admin system.
+          </p>
+          <p>
+            Please do not include sensitive personal information unless it is
+            necessary to explain a courier pricing issue.
+          </p>
+        </Section>
+
+        <Section title="Data retention and security">
+          <p>
+            CourierWise keeps only the information needed to operate the
+            product, review corrections, and protect the service from abuse.
+          </p>
+          <p>
+            Reasonable steps should be taken to protect stored data, but no
+            internet service can guarantee absolute security.
+          </p>
+        </Section>
+
+        <Section title="Third-party services">
+          <p>
+            CourierWise may rely on third-party infrastructure and tools to run
+            the app, database, analytics, and hosting. These providers may
+            process technical data required to deliver the service.
+          </p>
+        </Section>
+
+        <Section title="Contact">
+          <p>
+            If you have a privacy question or want a submission reviewed or
+            removed, contact:{" "}
             <a
-              href="mailto:hello@courierwise.app"
+              href="mailto:privacy@courierwise.app"
               className="font-medium text-primary underline-offset-4 hover:underline"
             >
-              hello@courierwise.app
+              privacy@courierwise.app
             </a>
-            .
           </p>
-        </section>
+        </Section>
 
-        <footer className="mt-12 flex flex-wrap items-center gap-x-5 gap-y-2 border-t pt-6 text-sm text-muted-foreground">
-          <Link to="/" className="hover:text-foreground">Home</Link>
-          <Link to="/compare" className="hover:text-foreground">Compare rates</Link>
-          <Link to="/about" className="hover:text-foreground">About</Link>
-        </footer>
+        <MarketingFooter current="privacy" />
       </main>
     </div>
+  );
+}
+
+function Section({ title, children }: { title: string; children: React.ReactNode }) {
+  return (
+    <section className="mt-8">
+      <h2 className="text-xl font-semibold">{title}</h2>
+      <div className="mt-3 space-y-3 leading-7 text-muted-foreground">{children}</div>
+    </section>
   );
 }
