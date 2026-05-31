@@ -39,7 +39,7 @@ const slabSchema = z.object({
   active: z.boolean(),
 });
 
-export const listAllSlabs = createServerFn({ method: "GET" })
+export const listAllSlabs = createServerFn({ method: "POST" })
   .inputValidator((input: { passphrase: string }) => input)
   .handler(async ({ data }) => {
     checkAdmin(data.passphrase);
@@ -49,7 +49,10 @@ export const listAllSlabs = createServerFn({ method: "GET" })
       .order("courier_name")
       .order("zone")
       .order("min_weight");
-    if (error) throw new Error(error.message);
+    if (error) {
+      console.error("[slabs.listAllSlabs] db error:", error);
+      throw new Error("A database error occurred. Please try again.");
+    }
     return { slabs: rows ?? [] };
   });
 
