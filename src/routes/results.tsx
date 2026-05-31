@@ -599,7 +599,9 @@ function ReportDialog({
           user_cod_amount: userCod,
           screenshot_note: screenshotNote.trim() || null,
           reporter_contact: reporterContact.trim() || null,
+          website,
         },
+
       });
       trackEvent("rate_report_submitted", {
         courier: courierName,
