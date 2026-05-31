@@ -1,2 +1,2 @@
-DELETE FROM public.courier_rate_slabs
-WHERE courier_name IN ('Pathao', 'REDX', 'Steadfast', 'Delivery Tiger');
+-- Safe-delete migration superseded by 20260531011159 which already
+-- includes DELETE + INSERT. This file intentionally left empty.
