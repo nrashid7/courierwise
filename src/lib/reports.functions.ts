@@ -22,7 +22,7 @@ export interface RateReport {
   created_at: string;
 }
 
-export const listRateReports = createServerFn({ method: "GET" })
+export const listRateReports = createServerFn({ method: "POST" })
   .inputValidator((input: { passphrase: string }) => input)
   .handler(async ({ data }) => {
     checkAdmin(data.passphrase);
@@ -30,7 +30,10 @@ export const listRateReports = createServerFn({ method: "GET" })
       .from("rate_reports")
       .select("*")
       .order("created_at", { ascending: false });
-    if (error) throw new Error(error.message);
+    if (error) {
+      console.error("[db error]", error);
+      throw new Error("A database error occurred. Please try again.");
+    }
     return { reports: (rows ?? []) as unknown as RateReport[] };
   });
 
@@ -50,6 +53,9 @@ export const markReportReviewed = createServerFn({ method: "POST" })
       .from("rate_reports")
       .update({ reviewed: data.reviewed })
       .eq("id", data.id);
-    if (error) throw new Error(error.message);
+    if (error) {
+      console.error("[db error]", error);
+      throw new Error("A database error occurred. Please try again.");
+    }
     return { ok: true };
   });

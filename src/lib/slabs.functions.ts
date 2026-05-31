@@ -39,7 +39,7 @@ const slabSchema = z.object({
   active: z.boolean(),
 });
 
-export const listAllSlabs = createServerFn({ method: "GET" })
+export const listAllSlabs = createServerFn({ method: "POST" })
   .inputValidator((input: { passphrase: string }) => input)
   .handler(async ({ data }) => {
     checkAdmin(data.passphrase);
@@ -49,7 +49,10 @@ export const listAllSlabs = createServerFn({ method: "GET" })
       .order("courier_name")
       .order("zone")
       .order("min_weight");
-    if (error) throw new Error(error.message);
+    if (error) {
+      console.error("[slabs.listAllSlabs] db error:", error);
+      throw new Error("A database error occurred. Please try again.");
+    }
     return { slabs: rows ?? [] };
   });
 
@@ -95,12 +98,18 @@ export const upsertSlab = createServerFn({ method: "POST" })
         .from("courier_rate_slabs")
         .update({ ...payload, updated_at: new Date().toISOString() })
         .eq("id", data.id);
-      if (error) throw new Error(error.message);
+      if (error) {
+      console.error("[db error]", error);
+      throw new Error("A database error occurred. Please try again.");
+    }
     } else {
       const { error } = await supabaseAdmin
         .from("courier_rate_slabs")
         .insert(payload);
-      if (error) throw new Error(error.message);
+      if (error) {
+      console.error("[db error]", error);
+      throw new Error("A database error occurred. Please try again.");
+    }
     }
     return { ok: true };
   });
@@ -113,7 +122,10 @@ export const deleteSlab = createServerFn({ method: "POST" })
       .from("courier_rate_slabs")
       .delete()
       .eq("id", data.id);
-    if (error) throw new Error(error.message);
+    if (error) {
+      console.error("[db error]", error);
+      throw new Error("A database error occurred. Please try again.");
+    }
     return { ok: true };
   });
 
@@ -125,6 +137,9 @@ export const toggleSlabActive = createServerFn({ method: "POST" })
       .from("courier_rate_slabs")
       .update({ active: data.active, updated_at: new Date().toISOString() })
       .eq("id", data.id);
-    if (error) throw new Error(error.message);
+    if (error) {
+      console.error("[db error]", error);
+      throw new Error("A database error occurred. Please try again.");
+    }
     return { ok: true };
   });

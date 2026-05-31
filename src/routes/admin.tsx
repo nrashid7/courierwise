@@ -79,6 +79,20 @@ function AdminPage() {
   const [passphrase, setPassphrase] = useState("");
   const [unlocked, setUnlocked] = useState(false);
   const [input, setInput] = useState("");
+  const verify = useServerFn(listAllSlabs);
+  const qc = useQueryClient();
+  const verifyMut = useMutation({
+    mutationFn: (p: string) => verify({ data: { passphrase: p } }),
+    onSuccess: (data, p) => {
+      // Seed cache so AdminPanel doesn't refetch immediately
+      qc.setQueryData(["admin_slabs"], data);
+      setPassphrase(p);
+      setUnlocked(true);
+    },
+    onError: () => {
+      toast.error("Incorrect passphrase.");
+    },
+  });
 
   if (!unlocked) {
     return (
@@ -99,8 +113,8 @@ function AdminPage() {
             <form
               onSubmit={(e) => {
                 e.preventDefault();
-                setPassphrase(input);
-                setUnlocked(true);
+                if (!input || verifyMut.isPending) return;
+                verifyMut.mutate(input);
               }}
               className="mt-4 space-y-3"
             >
@@ -110,8 +124,11 @@ function AdminPage() {
                 onChange={(e) => setInput(e.target.value)}
                 placeholder="Passphrase"
                 autoFocus
+                disabled={verifyMut.isPending}
               />
-              <Button type="submit" className="w-full">Unlock</Button>
+              <Button type="submit" className="w-full" disabled={verifyMut.isPending}>
+                {verifyMut.isPending ? "Verifying…" : "Unlock"}
+              </Button>
             </form>
           </div>
         </main>
@@ -119,7 +136,7 @@ function AdminPage() {
     );
   }
 
-  return <AdminPanel passphrase={passphrase} onLock={() => { setUnlocked(false); setInput(""); }} />;
+  return <AdminPanel passphrase={passphrase} onLock={() => { setUnlocked(false); setInput(""); setPassphrase(""); }} />;
 }
 
 function AdminPanel({ passphrase, onLock }: { passphrase: string; onLock: () => void }) {
