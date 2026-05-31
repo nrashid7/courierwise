@@ -1,0 +1,7 @@
+User-agent: *
+Allow: /
+Allow: /compare
+Allow: /results
+Disallow: /admin
+
+Sitemap: https://courierwise.com/sitemap.xml
