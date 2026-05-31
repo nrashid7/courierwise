@@ -314,12 +314,22 @@ function ResultsPage() {
           </p>
         )}
 
-        <div className="mt-4 space-y-3">
+        {!isLoading && quotes.length > 0 && (
+          <div className="mt-6">
+            <h2 className="text-base font-semibold tracking-tight">Courier options</h2>
+            <p className="mt-0.5 text-xs text-muted-foreground">
+              Ranked from lowest total cost to highest.
+            </p>
+          </div>
+        )}
+
+        <div className="mt-3 space-y-3">
           {quotes.map((q, i) => (
             <ResultCard
               key={q.slab.id}
               quote={q}
               rank={i + 1}
+              cheapestTotal={quotes[0]?.total ?? q.total}
               canonicalZone={search.canonicalZone}
               zoneLabel={zoneLabel}
               userWeight={search.weight}
