@@ -326,7 +326,7 @@ function ResultsPage() {
         )}
         {error && (
           <p className="mt-6 text-center text-sm text-destructive">
-            Couldn't load rates. {(error as Error).message}
+            Couldn't load rates. Please try again.
           </p>
         )}
 
