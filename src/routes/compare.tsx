@@ -47,7 +47,7 @@ function ComparePage() {
 
   const weightNum = Number(weight) || 0;
   const codNum = Number(cod) || 0;
-  const overWeight = weightNum > 3;
+  const overWeight = weightNum > 6;
 
   const onSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -162,7 +162,7 @@ function ComparePage() {
           {overWeight && (
             <div className="flex items-start gap-2 rounded-lg border border-warning/30 bg-warning/10 px-3 py-2 text-xs text-warning-foreground">
               <Info className="mt-0.5 h-4 w-4 shrink-0 text-warning" />
-              <p>Rates above 3kg may vary by courier. Verify before booking.</p>
+              <p>Rates above 6kg may vary by courier. Verify before booking.</p>
             </div>
           )}
 
