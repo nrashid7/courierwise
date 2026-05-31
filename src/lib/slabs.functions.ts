@@ -80,7 +80,10 @@ export const upsertSlab = createServerFn({ method: "POST" })
       .select("id, min_weight, max_weight")
       .eq("courier_name", data.slab.courier_name)
       .eq("zone", data.slab.zone);
-    if (exErr) throw new Error(exErr.message);
+    if (exErr) {
+      console.error("[slabs.upsertSlab] overlap check error:", exErr);
+      throw new Error("A database error occurred. Please try again.");
+    }
 
     const overlaps = (existing ?? []).some((row) => {
       if (data.id && row.id === data.id) return false;
