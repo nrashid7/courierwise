@@ -266,10 +266,10 @@ function ResultsPage() {
         </section>
 
         <p className="mt-3 text-xs text-muted-foreground">
-          Rates are based on publicly available courier pricing (verified May 2026).
-          Final charges may vary by parcel size, remote area surcharges, and courier
-          promotions.
+          {verificationLabel}. Final charges may vary by parcel size, remote area
+          surcharges, and courier promotions.
         </p>
+
 
         {hasEstimated && (
           <div
