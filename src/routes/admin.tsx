@@ -380,11 +380,20 @@ function SlabDialog({
   const [minWeight, setMinWeight] = useState(String(initial?.min_weight ?? 0));
   const [maxWeight, setMaxWeight] = useState(String(initial?.max_weight ?? 0.5));
   const [price, setPrice] = useState(String(initial?.price ?? 60));
+  const [extraKgPrice, setExtraKgPrice] = useState(String(initial?.extra_kg_price ?? 0));
+  const [minCharge, setMinCharge] = useState(String(initial?.min_charge ?? 0));
   const [codPercent, setCodPercent] = useState(String(initial?.cod_percent ?? 1));
   const [codFixed, setCodFixed] = useState(String(initial?.cod_fixed_fee ?? 10));
   const [eta, setEta] = useState(initial?.estimated_delivery_time ?? "1-2 days");
   const [notes, setNotes] = useState(initial?.notes ?? "");
   const [sourceUrl, setSourceUrl] = useState(initial?.source_url ?? "");
+  const [sourceType, setSourceType] = useState(initial?.source_type ?? "official_site");
+  const [verificationStatus, setVerificationStatus] = useState(
+    initial?.verification_status ?? "estimated",
+  );
+  const [confidence, setConfidence] = useState(initial?.confidence_score ?? "low");
+  const [estimatedFlag, setEstimatedFlag] = useState(initial?.estimated_flag ?? true);
+  const [verifiedBy, setVerifiedBy] = useState(initial?.verified_by ?? "");
   const [verified, setVerified] = useState(
     initial?.last_verified_date ?? new Date().toISOString().slice(0, 10),
   );
@@ -403,11 +412,18 @@ function SlabDialog({
             min_weight: Number(minWeight) || 0,
             max_weight: Number(maxWeight) || 0,
             price: Number(price) || 0,
+            extra_kg_price: Number(extraKgPrice) || 0,
+            min_charge: Number(minCharge) || 0,
             cod_percent: Number(codPercent) || 0,
             cod_fixed_fee: Number(codFixed) || 0,
             estimated_delivery_time: eta || null,
             notes: notes || null,
             source_url: sourceUrl || null,
+            source_type: sourceType || null,
+            verification_status: verificationStatus,
+            confidence_score: confidence,
+            estimated_flag: estimatedFlag,
+            verified_by: verifiedBy || null,
             last_verified_date: verified || null,
             active,
           },
@@ -458,6 +474,12 @@ function SlabDialog({
             <Field label="Price (BDT)">
               <Input type="number" value={price} onChange={(e) => setPrice(e.target.value)} />
             </Field>
+            <Field label="Extra kg price (BDT)">
+              <Input type="number" value={extraKgPrice} onChange={(e) => setExtraKgPrice(e.target.value)} />
+            </Field>
+            <Field label="Min charge (BDT)">
+              <Input type="number" value={minCharge} onChange={(e) => setMinCharge(e.target.value)} />
+            </Field>
             <Field label="COD percent (%)">
               <Input type="number" step="0.1" value={codPercent} onChange={(e) => setCodPercent(e.target.value)} />
             </Field>
@@ -466,6 +488,48 @@ function SlabDialog({
             </Field>
             <Field label="Est. delivery time">
               <Input value={eta} onChange={(e) => setEta(e.target.value)} />
+            </Field>
+            <Field label="Verification status">
+              <Select value={verificationStatus} onValueChange={(v) => setVerificationStatus(v as typeof verificationStatus)}>
+                <SelectTrigger><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="official">Official</SelectItem>
+                  <SelectItem value="community_verified">Community verified</SelectItem>
+                  <SelectItem value="estimated">Estimated</SelectItem>
+                  <SelectItem value="outdated">Outdated</SelectItem>
+                  <SelectItem value="disputed">Disputed</SelectItem>
+                </SelectContent>
+              </Select>
+            </Field>
+            <Field label="Confidence">
+              <Select value={confidence} onValueChange={(v) => setConfidence(v as typeof confidence)}>
+                <SelectTrigger><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="high">High</SelectItem>
+                  <SelectItem value="medium">Medium</SelectItem>
+                  <SelectItem value="low">Low</SelectItem>
+                </SelectContent>
+              </Select>
+            </Field>
+            <Field label="Source type">
+              <Select value={sourceType ?? "official_site"} onValueChange={setSourceType}>
+                <SelectTrigger><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="official_site">Official site</SelectItem>
+                  <SelectItem value="merchant_doc">Merchant doc</SelectItem>
+                  <SelectItem value="community">Community</SelectItem>
+                  <SelectItem value="admin_manual">Admin manual</SelectItem>
+                </SelectContent>
+              </Select>
+            </Field>
+            <Field label="Estimated flag">
+              <Select value={estimatedFlag ? "yes" : "no"} onValueChange={(v) => setEstimatedFlag(v === "yes")}>
+                <SelectTrigger><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="yes">Estimated</SelectItem>
+                  <SelectItem value="no">Not estimated</SelectItem>
+                </SelectContent>
+              </Select>
             </Field>
             <Field label="Last verified date">
               <Input type="date" value={verified} onChange={(e) => setVerified(e.target.value)} />
@@ -480,6 +544,9 @@ function SlabDialog({
               </Select>
             </Field>
           </div>
+          <Field label="Verified by">
+            <Input value={verifiedBy} onChange={(e) => setVerifiedBy(e.target.value)} placeholder="Name / source" />
+          </Field>
           <Field label="Source URL">
             <Input value={sourceUrl} onChange={(e) => setSourceUrl(e.target.value)} placeholder="https://" />
           </Field>
@@ -494,6 +561,97 @@ function SlabDialog({
         </form>
       </DialogContent>
     </Dialog>
+  );
+}
+
+function VerificationsSection({ passphrase }: { passphrase: string }) {
+  const qc = useQueryClient();
+  const list = useServerFn(listVerifications);
+  const updateStatus = useServerFn(updateVerificationStatus);
+  const [showAll, setShowAll] = useState(false);
+
+  const { data, isLoading, error } = useQuery({
+    queryKey: ["admin_verifications"],
+    queryFn: () => list({ data: { passphrase } }),
+    retry: false,
+  });
+
+  const mut = useMutation({
+    mutationFn: (vars: { id: string; status: RateVerification["status"] }) =>
+      updateStatus({ data: { passphrase, ...vars } }),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ["admin_verifications"] }),
+    onError: (e: Error) => toast.error(e.message),
+  });
+
+  const verifications = (data?.verifications ?? []) as RateVerification[];
+  const visible = showAll ? verifications : verifications.filter((v) => v.status === "pending");
+
+  return (
+    <section className="mt-10">
+      <div className="mb-3 flex items-center justify-between">
+        <h2 className="text-base font-semibold">Crowd-sourced rate verifications</h2>
+        <label className="flex items-center gap-2 text-xs text-muted-foreground">
+          <Switch checked={showAll} onCheckedChange={setShowAll} />
+          Show all statuses
+        </label>
+      </div>
+
+      {isLoading && <p className="text-sm text-muted-foreground">Loading verifications…</p>}
+      {error && <p className="text-sm text-destructive">{(error as Error).message}</p>}
+
+      <div className="space-y-2">
+        {visible.map((v) => (
+          <div key={v.id} className="rounded-xl border bg-card p-3">
+            <div className="flex flex-wrap items-center gap-2">
+              <span className="font-semibold">{v.courier_name}</span>
+              {v.zone && (
+                <span className="rounded bg-muted px-1.5 py-0.5 text-[10px] uppercase tracking-wide text-muted-foreground">
+                  {v.zone}
+                </span>
+              )}
+              <span className="rounded bg-accent px-1.5 py-0.5 text-[10px] uppercase tracking-wide text-accent-foreground">
+                {v.status}
+              </span>
+              <span className="ml-auto text-[11px] text-muted-foreground">
+                {new Date(v.created_at).toLocaleString()}
+              </span>
+            </div>
+            <div className="mt-2 grid gap-1 text-xs text-muted-foreground sm:grid-cols-2">
+              {v.weight != null && <span>Weight: {v.weight} kg</span>}
+              {v.submitted_price != null && <span>Submitted price: ৳{v.submitted_price}</span>}
+              {v.submitter_contact && <span>Contact: {v.submitter_contact}</span>}
+              {v.evidence_url && (
+                <a
+                  href={v.evidence_url}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-primary hover:underline sm:col-span-2"
+                >
+                  Evidence: {v.evidence_url}
+                </a>
+              )}
+              {v.notes && <span className="sm:col-span-2">Notes: {v.notes}</span>}
+            </div>
+            <div className="mt-3 flex flex-wrap justify-end gap-2">
+              {(["approved", "merged", "rejected", "pending"] as const).map((s) => (
+                <Button
+                  key={s}
+                  size="sm"
+                  variant={v.status === s ? "default" : "outline"}
+                  onClick={() => mut.mutate({ id: v.id, status: s })}
+                  disabled={mut.isPending}
+                >
+                  {s}
+                </Button>
+              ))}
+            </div>
+          </div>
+        ))}
+        {!isLoading && visible.length === 0 && (
+          <p className="text-sm text-muted-foreground">No verifications to show.</p>
+        )}
+      </div>
+    </section>
   );
 }
 
