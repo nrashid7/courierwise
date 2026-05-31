@@ -7,11 +7,11 @@ import {
   MapPin,
   Package,
   ShieldCheck,
-  Truck,
   Wallet,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
+import { MarketingHeader, MarketingFooter } from "@/components/MarketingHeader";
 
 export const Route = createFileRoute("/")({
   head: () => ({
@@ -74,25 +74,7 @@ function Index() {
 
   return (
     <div className="min-h-dvh bg-background">
-      <header className="mx-auto flex max-w-5xl items-center justify-between px-4 py-4 sm:px-6">
-        <div className="flex items-center gap-2.5">
-          <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-primary text-primary-foreground shadow-sm">
-            <Truck className="h-5 w-5" aria-hidden="true" />
-          </div>
-          <div>
-            <p className="text-base font-bold leading-none tracking-tight">CourierWise</p>
-            <p className="mt-1 text-[11px] font-medium uppercase text-muted-foreground">
-              Bangladesh courier compare
-            </p>
-          </div>
-        </div>
-        <Link to="/compare">
-          <Button variant="outline" size="sm" className="h-9">
-            Compare rates
-            <ArrowRight className="h-4 w-4" aria-hidden="true" />
-          </Button>
-        </Link>
-      </header>
+      <MarketingHeader />
 
       <main className="mx-auto max-w-5xl px-4 pb-16 pt-6 sm:px-6 sm:pt-10">
         <section className="grid items-center gap-8 lg:grid-cols-[1.05fr_0.95fr]">
@@ -121,7 +103,10 @@ function Index() {
                 No login. No booking lock-in.
               </div>
             </div>
-            <p className="mt-4 text-xs font-medium text-muted-foreground">
+            <p className="mt-3 text-xs text-muted-foreground">
+              Rates independently verified and improved by merchant feedback.
+            </p>
+            <p className="mt-2 text-xs font-medium text-muted-foreground">
               {verificationLabel}
             </p>
           </div>
@@ -183,16 +168,7 @@ function Index() {
           </Link>
         </p>
 
-        <footer className="mt-10 border-t pt-6">
-          <p className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">
-            Resources
-          </p>
-          <div className="mt-2 flex flex-wrap items-center gap-x-5 gap-y-2 text-sm text-muted-foreground">
-            <Link to="/about" className="hover:text-foreground">About</Link>
-            <Link to="/privacy" className="hover:text-foreground">Privacy</Link>
-            <Link to="/compare" className="hover:text-foreground">Compare rates</Link>
-          </div>
-        </footer>
+        <MarketingFooter current="home" />
       </main>
     </div>
   );
