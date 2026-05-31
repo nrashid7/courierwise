@@ -304,12 +304,14 @@ function ResultCard({
           <VerifyDialog
             slabId={quote.slab.id}
             courierName={quote.courier_name}
-            zone={zone}
+            canonicalZone={canonicalZone}
+            zoneLabel={zoneLabel}
             userWeight={userWeight}
           />
           <ReportDialog
             courierName={quote.courier_name}
-            zone={zone}
+            canonicalZone={canonicalZone}
+            zoneLabel={zoneLabel}
             userWeight={userWeight}
             userCod={userCod}
           />
