@@ -88,7 +88,7 @@ function Index() {
         </div>
         <Link to="/compare">
           <Button variant="outline" size="sm" className="h-9">
-            Compare
+            Compare rates
             <ArrowRight className="h-4 w-4" aria-hidden="true" />
           </Button>
         </Link>
@@ -134,6 +134,9 @@ function Index() {
                   Illustrative example only
                 </span>
               </div>
+              <p className="mt-1 text-xs text-muted-foreground">
+                Dhaka → Chattogram • 1kg • COD ৳1,500
+              </p>
               <div className="mt-4 grid grid-cols-[1fr_auto_1fr] items-center gap-2 text-sm">
                 <RoutePill label="Dhaka" />
                 <ArrowRight className="h-4 w-4 text-muted-foreground" aria-hidden="true" />
@@ -142,9 +145,9 @@ function Index() {
             </div>
 
             <div className="mt-4 space-y-3">
-              <QuotePreview courier="Pathao" price="৳120" meta="1kg + COD ৳1,500" active />
-              <QuotePreview courier="Steadfast" price="৳130" meta="Estimated slab" />
-              <QuotePreview courier="REDX" price="৳145" meta="Community verified" />
+              <QuotePreview courier="REDX" price="৳127" meta="Community verified" active />
+              <QuotePreview courier="Pathao" price="৳138" meta="1kg + COD ৳1,500" />
+              <QuotePreview courier="Steadfast" price="৳149" meta="Estimated slab" />
             </div>
           </div>
         </section>
@@ -180,10 +183,15 @@ function Index() {
           </Link>
         </p>
 
-        <footer className="mt-10 flex flex-wrap items-center gap-x-5 gap-y-2 border-t pt-6 text-sm text-muted-foreground">
-          <Link to="/about" className="hover:text-foreground">About</Link>
-          <Link to="/privacy" className="hover:text-foreground">Privacy</Link>
-          <Link to="/compare" className="hover:text-foreground">Compare rates</Link>
+        <footer className="mt-10 border-t pt-6">
+          <p className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">
+            Resources
+          </p>
+          <div className="mt-2 flex flex-wrap items-center gap-x-5 gap-y-2 text-sm text-muted-foreground">
+            <Link to="/about" className="hover:text-foreground">About</Link>
+            <Link to="/privacy" className="hover:text-foreground">Privacy</Link>
+            <Link to="/compare" className="hover:text-foreground">Compare rates</Link>
+          </div>
         </footer>
       </main>
     </div>
