@@ -86,8 +86,22 @@ export const Route = createFileRoute("/results")({
   validateSearch: (search) => searchSchema.parse(search),
   head: () => ({
     meta: [
-      { title: "Results — CourierWise" },
-      { name: "description", content: "Cheapest courier options for your parcel." },
+      { title: "Courier rate results — CourierWise" },
+      {
+        name: "description",
+        content:
+          "Ranked courier options for your parcel — delivery fee plus COD fee combined, so you can pick the cheapest courier before booking.",
+      },
+      { property: "og:title", content: "Courier rate results — CourierWise" },
+      {
+        property: "og:description",
+        content:
+          "Compare ranked Pathao, REDX, Steadfast, and Delivery Tiger quotes with COD-aware totals for your parcel.",
+      },
+      { property: "og:url", content: "https://courierwise.lovable.app/results" },
+    ],
+    links: [
+      { rel: "canonical", href: "https://courierwise.lovable.app/results" },
     ],
   }),
   component: ResultsPage,
