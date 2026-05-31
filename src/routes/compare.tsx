@@ -423,6 +423,38 @@ function BulkParcelMode({
 
   const handleCompare = () => {
     if (!canCompare) return;
+
+    const invalidNonEmpty = parcels.filter((p) => {
+      const w = p.weight.trim();
+      const c = p.cod.trim();
+
+      // completely empty rows are silently ignored
+      if (!w && !c) return false;
+
+      const wn = Number(w);
+      const cn = c === "" ? 0 : Number(c);
+
+      const wInvalid =
+        !Number.isFinite(wn) ||
+        wn <= 0 ||
+        wn > 50;
+
+      const cInvalid =
+        !Number.isFinite(cn) ||
+        cn < 0 ||
+        cn > 100000;
+
+      return wInvalid || cInvalid;
+    });
+
+    if (invalidNonEmpty.length > 0) {
+      toast.warning(
+        `${invalidNonEmpty.length} row${
+          invalidNonEmpty.length > 1 ? "s" : ""
+        } skipped — weight must be 0.1–50 kg and COD must be 0–100,000.`
+      );
+    }
+
     setSubmitted(true);
   };
 
