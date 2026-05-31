@@ -79,12 +79,6 @@ export const submitVerification = createServerFn({ method: "POST" })
     if (error) throw new Error(error.message);
     return { ok: true };
   });
-    const { error } = await supabaseAdmin
-      .from("rate_verifications")
-      .insert({ ...data, status: "pending" });
-    if (error) throw new Error(error.message);
-    return { ok: true };
-  });
 
 export const listVerifications = createServerFn({ method: "GET" })
   .inputValidator((input: { passphrase: string }) => input)
