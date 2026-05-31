@@ -576,8 +576,10 @@ function ReportDialog({
   const [actual, setActual] = useState("");
   const [screenshotNote, setScreenshotNote] = useState("");
   const [reporterContact, setReporterContact] = useState("");
+  const [website, setWebsite] = useState(""); // honeypot
   const [submitting, setSubmitting] = useState(false);
   const submit = useServerFn(submitRateReport);
+
 
   const onSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
