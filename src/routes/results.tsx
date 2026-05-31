@@ -34,6 +34,28 @@ import { useServerFn } from "@tanstack/react-start";
 
 const CANONICAL_ZONE_ENUM = ["INSIDE_DHAKA", "SUBURBAN", "OUTSIDE_DHAKA", "INTER_DISTRICT"] as const;
 
+type Freshness = {
+  label: string;
+  tone: "fresh" | "recent" | "stale" | "old";
+};
+
+function getFreshness(
+  lastVerifiedAt: string | null,
+  lastVerifiedDate: string | null,
+): Freshness | null {
+  const raw = lastVerifiedAt ?? lastVerifiedDate;
+  if (!raw) return null;
+  const verified = new Date(raw);
+  if (Number.isNaN(verified.getTime())) return null;
+  const days = Math.floor((Date.now() - verified.getTime()) / 86_400_000);
+  const monthDay = verified.toLocaleDateString("en-US", { month: "short", day: "numeric" });
+  const monthYear = verified.toLocaleDateString("en-US", { month: "short", year: "numeric" });
+  if (days <= 7) return { label: "🟢 Verified this week", tone: "fresh" };
+  if (days <= 30) return { label: `Verified ${monthDay}`, tone: "recent" };
+  if (days <= 90) return { label: `🟡 Verified ${monthYear}`, tone: "stale" };
+  return { label: "🔴 Confirm before booking", tone: "old" };
+}
+
 const searchSchema = z
   .object({
     pickup: z.string().default("Dhaka"),
