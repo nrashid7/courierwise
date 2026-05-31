@@ -193,13 +193,21 @@ function ResultCard({
   userCod: number;
 }) {
   const cheapest = rank === 1;
+  const conf = confidenceLabel(quote.slab);
+  const toneClasses =
+    conf.tone === "success"
+      ? "bg-emerald-500/15 text-emerald-700 dark:text-emerald-400 border border-emerald-500/30"
+      : conf.tone === "warning"
+        ? "bg-amber-500/15 text-amber-700 dark:text-amber-400 border border-amber-500/30"
+        : "bg-muted text-muted-foreground border border-border";
+
   return (
     <div
       className={`rounded-xl border bg-card p-4 ${cheapest ? "border-primary ring-1 ring-primary/30" : ""}`}
     >
       <div className="flex items-start justify-between gap-3">
-        <div>
-          <div className="flex items-center gap-2">
+        <div className="min-w-0">
+          <div className="flex flex-wrap items-center gap-2">
             <span className="text-xs font-medium text-muted-foreground">#{rank}</span>
             <h3 className="text-base font-semibold">{quote.courier_name}</h3>
             {cheapest && (
@@ -208,6 +216,12 @@ function ResultCard({
                 Cheapest
               </span>
             )}
+            <span
+              className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide ${toneClasses}`}
+              title={`Verification: ${quote.slab.verification_status} · Confidence: ${quote.slab.confidence_score}`}
+            >
+              {conf.label}
+            </span>
           </div>
           <p className="mt-0.5 text-xs text-muted-foreground">
             {quote.weightRangeLabel}
@@ -250,12 +264,20 @@ function ResultCard({
             </a>
           )}
         </div>
-        <ReportDialog
-          courierName={quote.courier_name}
-          zone={zone}
-          userWeight={userWeight}
-          userCod={userCod}
-        />
+        <div className="flex gap-1">
+          <VerifyDialog
+            slabId={quote.slab.id}
+            courierName={quote.courier_name}
+            zone={zone}
+            userWeight={userWeight}
+          />
+          <ReportDialog
+            courierName={quote.courier_name}
+            zone={zone}
+            userWeight={userWeight}
+            userCod={userCod}
+          />
+        </div>
       </div>
     </div>
   );
