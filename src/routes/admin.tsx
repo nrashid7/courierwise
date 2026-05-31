@@ -24,7 +24,30 @@ import {
   DialogTrigger,
 } from "@/components/ui/dialog";
 import { Textarea } from "@/components/ui/textarea";
-import { COURIERS, ZONES, type CourierRateSlab } from "@/lib/courier";
+import {
+  COURIERS,
+  ZONES,
+  VERIFICATION_STATUSES,
+  CANONICAL_ZONE_LABELS,
+  type CanonicalZone,
+  type CourierRateSlab,
+  type VerificationStatus,
+} from "@/lib/courier";
+
+function zoneToCanonical(zone: string): CanonicalZone {
+  switch (zone) {
+    case "Inside Dhaka":
+      return "INSIDE_DHAKA";
+    case "Dhaka Suburbs":
+      return "SUBURBAN";
+    case "Outside Dhaka":
+      return "OUTSIDE_DHAKA";
+    case "Outside Dhaka → Outside Dhaka":
+      return "INTER_DISTRICT";
+    default:
+      return "INSIDE_DHAKA";
+  }
+}
 import {
   deleteSlab,
   listAllSlabs,
