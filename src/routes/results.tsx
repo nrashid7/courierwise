@@ -174,12 +174,46 @@ function ResultsPage() {
         <h1 className="text-lg font-semibold">Comparison results</h1>
       </header>
 
-      <main className="mx-auto max-w-2xl px-4 pb-16">
+      <div className="sticky top-0 z-20 border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/80">
+        <div className="mx-auto flex max-w-2xl items-center justify-center gap-1 px-4 py-2">
+          <div className="inline-flex rounded-full border bg-muted p-0.5 text-xs font-medium">
+            <button
+              type="button"
+              onClick={() => setCodMode("cod")}
+              className={`rounded-full px-3 py-1 transition ${
+                codMode === "cod"
+                  ? "bg-background text-foreground shadow-sm"
+                  : "text-muted-foreground"
+              }`}
+              aria-pressed={codMode === "cod"}
+            >
+              With COD
+            </button>
+            <button
+              type="button"
+              onClick={() => setCodMode("prepaid")}
+              className={`rounded-full px-3 py-1 transition ${
+                codMode === "prepaid"
+                  ? "bg-background text-foreground shadow-sm"
+                  : "text-muted-foreground"
+              }`}
+              aria-pressed={codMode === "prepaid"}
+            >
+              Prepaid
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <main className="mx-auto max-w-2xl px-4 pb-16 pt-3">
         <div className="rounded-xl border bg-card p-3 text-xs text-muted-foreground">
           <div className="flex flex-wrap gap-x-4 gap-y-1">
             <span><span className="text-foreground font-medium">Zone:</span> {zoneLabel}</span>
             <span><span className="text-foreground font-medium">Weight:</span> {search.weight} kg</span>
-            <span><span className="text-foreground font-medium">COD:</span> ৳{search.cod}</span>
+            <span>
+              <span className="text-foreground font-medium">COD:</span>{" "}
+              {codMode === "prepaid" ? "Prepaid (no COD)" : `৳${search.cod}`}
+            </span>
             <span><span className="text-foreground font-medium">Route:</span> {search.pickup} → {search.destination}</span>
           </div>
         </div>
@@ -210,7 +244,11 @@ function ResultsPage() {
           </div>
         )}
 
-        <div className="mt-3 flex justify-end">
+        <div className="mt-3 flex flex-wrap justify-end gap-2">
+          <Button variant="outline" size="sm" onClick={handleCopyWhatsApp} disabled={quotes.length === 0}>
+            <MessageCircle className="mr-2 h-4 w-4" />
+            Copy WhatsApp summary
+          </Button>
           <Button variant="outline" size="sm" onClick={handleCopyLink}>
             <Copy className="mr-2 h-4 w-4" />
             Copy quote link
@@ -249,7 +287,7 @@ function ResultsPage() {
               canonicalZone={search.canonicalZone}
               zoneLabel={zoneLabel}
               userWeight={search.weight}
-              userCod={search.cod}
+              userCod={effectiveCod}
             />
           ))}
           {!isLoading && quotes.length === 0 && (
