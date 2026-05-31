@@ -114,8 +114,10 @@ export function legacyZoneToCanonical(zone: string | undefined | null): Canonica
     case "Sub-Dhaka":
       return "SUBURBAN";
     case "Outside Dhaka":
+    case "Dhaka to Outside Dhaka":
       return "OUTSIDE_DHAKA";
     case "Outside Dhaka → Outside Dhaka":
+    case "Outside Dhaka to Outside Dhaka":
     case "Inter-District":
       return "INTER_DISTRICT";
     default:
