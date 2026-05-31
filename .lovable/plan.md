@@ -1,58 +1,51 @@
-## Feature 1 — Auto Zone Detection
+## Goal
 
-**`src/lib/courier.ts`**
-- Add `inferZone(pickup, destination): CanonicalZone` with case-insensitive/trimmed comparisons.
-  - Constants: `DHAKA = "dhaka"`, `SUBURBAN = ["gazipur","savar","narayanganj","keraniganj","tongi"]`.
-  - Rules in order:
-    1. pickup=dhaka & destination=dhaka → `INSIDE_DHAKA`
-    2. pickup=dhaka & destination ∈ SUBURBAN → `SUBURBAN`
-    3. pickup=dhaka & destination≠dhaka → `OUTSIDE_DHAKA`
-    4. fallback (pickup≠dhaka & destination≠dhaka) → `INTER_DISTRICT`
-- `legacyZoneToCanonical()` already accepts new + old labels — leave as-is.
+The About and Privacy pages currently read as a flat wall of muted text. The homepage feels alive thanks to: a chip badge, a bold tight headline, a side-by-side hero with a bordered card, feature cards with icon tiles, and crisp section grouping. I'll bring the same visual vocabulary to /about and /privacy without changing copy or routing.
 
-**`src/routes/compare.tsx`**
-- On every `pickup`/`destination` change, call `setCanonicalZone(inferZone(pickup, destination))` (via `useEffect` on those two values).
-- Below destination field show subtle muted text: `Detected zone: {CANONICAL_ZONE_LABELS[canonicalZone]}`.
-- Wrap the existing zone `Select` (and the explanatory paragraph) in a collapsed `Collapsible` titled "Advanced override" with proper `aria-expanded` / `aria-controls`. Selector remains fully functional when expanded; manual selection just sets `canonicalZone` directly (auto-infer effect still re-runs if route fields change afterward — acceptable per spec).
+## Shared structure (both pages)
 
-## Feature 2 — Bulk Parcel Mode (inline, no new route)
+- Keep `MarketingHeader` and `MarketingFooter` (use full `max-w-5xl` to match home).
+- Add a **hero block** styled like the homepage hero:
+  - Small chip badge with icon (e.g. `BadgeCheck` "About CourierWise" / `ShieldCheck` "Privacy Policy")
+  - Large tight headline (`text-4xl sm:text-5xl font-bold tracking-tight`)
+  - One-line muted intro paragraph beneath it
+  - For Privacy: small "Last updated · May 2026" pill instead of plain text
+- Replace plain `<section><h2>` blocks with **bordered content cards** (`rounded-2xl border bg-card p-6 shadow-sm`) like the sample-quote and feature cards on home.
+- Each card gets a small **icon tile** (`h-10 w-10 rounded-lg bg-accent text-accent-foreground`) matching the home Feature component, plus title and body.
+- Use a **2-column grid** (`sm:grid-cols-2`) for the shorter sections so the page reads as a composed surface rather than a long scroll. Long-form sections stay full width.
+- Contact section becomes a highlighted CTA-style card (subtle `bg-secondary` or `bg-accent/40`) with the email rendered as a prominent link, echoing the homepage CTA row.
+- Footer stays as-is (already shared).
 
-**`src/routes/compare.tsx`** — add Tabs (`Single Parcel` | `Bulk Parcels`), default `single`. Tab state is local `useState` only — not URL, not search params.
+## About page specifics
 
-Shared inputs (pickup, destination, inferred zone, advanced override) sit above the tabs so they apply to both modes.
+Sections rendered as icon-cards:
+- Why it exists — `Compass` icon, full width
+- How rates work — `Calculator` icon, half width
+- Verification & corrections — `BadgeCheck` icon, half width
+- What CourierWise is not — `XCircle` icon, half width
+- Independent tool note — `ShieldCheck` icon, half width (pulled from the intro's second paragraph for visual balance)
+- Contact — accent CTA card, full width
 
-### Single tab
-Existing form + submit → `/results` navigation, unchanged.
+## Privacy page specifics
 
-### Bulk tab
-- Local state `parcels: { weight: string; cod: string }[]`, init 3 empty rows.
-- Mobile-first row UI: weight + COD inputs, remove button per row, "Add parcel" button below.
-- Row cap 20; attempt to exceed → `toast.error("Maximum 20 parcels per bulk quote.")`.
-- Per-row validation: weight `>0 && <=50`, cod `>=0 && <=100000`. Fully-empty rows ignored. Invalid non-empty rows skipped from compute and surfaced inline.
-- Compare button disabled when no valid rows.
+- Hero: chip "Privacy Policy", headline, muted intro, "Last updated" pill.
+- Bulleted sections ("What CourierWise collects", "Why this information is collected") rendered as icon-cards full width with the existing bullet lists — bullets get a small primary-colored dot for polish.
+- "What CourierWise does not do" rendered as 3 small stat-style cards in a `sm:grid-cols-3` row (one statement per card) — visually echoes the homepage 4-up Feature row.
+- "Verification submissions", "Data retention and security", "Third-party services" as a 3-up icon-card grid.
+- Contact: accent CTA card with `privacy@courierwise.app`.
 
-#### Data fetching
-- Single `useQuery` keyed on `["courier_rate_slabs", canonicalZone]`, runs only when bulk tab is active and there's ≥1 valid row. Same shape as `results.tsx` (active=true + canonical_zone filter). Slabs fetched once, reused for all rows.
+## Files touched
 
-#### Compute (in-memory, no extra endpoints)
-- For each valid row, run existing `rankSlabQuotes(slabs, { canonicalZone, weight, codAmount })`.
-- Aggregate per-courier totals across rows.
-- Exclude any courier missing a quote for any included row (prevents broken layout / partial columns).
-- Sort couriers by ascending total.
+- `src/routes/about.tsx` — restructure JSX, no copy changes, no route changes.
+- `src/routes/privacy.tsx` — restructure JSX, no copy changes, no route changes.
+- (Optional) small shared `InfoCard` / `IconTile` helper inside each file — kept local, no new shared component file unless it cleans up duplication meaningfully.
 
-#### Bulk results UI (rendered inline below the form)
-1. **Savings header**: "Best overall courier: X" + per-other-courier delta lines (`৳N vs Pathao`).
-2. **Results table**: rows = each parcel (`Wkg / COD V`), columns = surviving couriers, sticky `TOTAL` row at bottom. Horizontally scrollable on mobile. Cheapest column gets subtle stronger border/bg via existing tokens.
-3. **Copy WhatsApp summary** button. Uses same dynamic `verificationLabel` logic as `results.tsx` (newest `last_verified_date`/`last_verified_at` across the slabs used → `Rates verified {Month YYYY}`, else fallback). URL = `window.location.href` (the `/compare` page) — no placeholder.
+## Out of scope
 
-#### Analytics
-- `bulk_quote_generated` on compute completion (debounced to one fire per submit click): `{ parcel_count, canonical_zone, total_cod, total_weight }`.
-- `bulk_whatsapp_copied` on copy success: `{ parcel_count, cheapest_courier }`.
+- No copy edits (text stays verbatim from the previous prompt).
+- No header/footer changes.
+- No new routes, no design tokens added, no new dependencies.
 
-## Out of scope (explicit)
-Pricing engine math, ranking logic, single-quote calc, visual redesign, new routes, new DB/API endpoints, accounts/dashboards/booking/tracking, search-param tab persistence, `/results/bulk`.
+## QA
 
-## Technical notes
-- Reuse existing `supabase` client, `rankSlabQuotes`, `CANONICAL_ZONE_LABELS`, `trackEvent`, `Collapsible`, `Tabs`, `Table` shadcn components.
-- Keep all styling via semantic tokens (no raw colors).
-- No edits to `results.tsx`, pricing files, or DB migrations.
+After implementing, visit `/about` and `/privacy` in the preview at desktop and mobile widths to confirm cards align, icon tiles render, and the contact CTA pops without overwhelming the page.
