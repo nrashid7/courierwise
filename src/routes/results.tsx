@@ -433,6 +433,19 @@ function VerifyDialog({
       toast.error("Provide a corrected price or a note.");
       return;
     }
+    if (notes.length > 2000) {
+      toast.error("Notes must be 2000 characters or fewer.");
+      return;
+    }
+    const trimmedUrl = evidenceUrl.trim();
+    if (trimmedUrl) {
+      try {
+        new URL(trimmedUrl);
+      } catch {
+        toast.error("Evidence link must be a valid URL (https://…)");
+        return;
+      }
+    }
     setSubmitting(true);
     try {
       await submit({
@@ -442,14 +455,15 @@ function VerifyDialog({
           zone,
           weight: userWeight,
           submitted_price: submittedPrice ? Number(submittedPrice) : null,
-          evidence_url: evidenceUrl.trim() || null,
+          evidence_url: trimmedUrl || null,
           submitter_contact: submitterContact.trim() || null,
           notes: notes.trim() || null,
+          website,
         },
       });
       toast.success("Thanks — verification submitted for review.");
       setOpen(false);
-      setSubmittedPrice(""); setEvidenceUrl(""); setSubmitterContact(""); setNotes("");
+      setSubmittedPrice(""); setEvidenceUrl(""); setSubmitterContact(""); setNotes(""); setWebsite("");
     } catch (err) {
       toast.error((err as Error).message);
     } finally {
