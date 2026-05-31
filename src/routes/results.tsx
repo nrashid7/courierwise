@@ -1,6 +1,6 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
-import { ArrowLeft, BadgeCheck, Clock, Copy, ExternalLink, Flag, Info, PackageOpen } from "lucide-react";
+import { ArrowLeft, BadgeCheck, Clock, Copy, ExternalLink, Flag, Info, MessageCircle, PackageOpen } from "lucide-react";
 import { useEffect, useState } from "react";
 import { z } from "zod";
 import { trackEvent } from "@/lib/analytics";
@@ -33,6 +33,28 @@ import { submitVerification } from "@/lib/verifications.functions";
 import { useServerFn } from "@tanstack/react-start";
 
 const CANONICAL_ZONE_ENUM = ["INSIDE_DHAKA", "SUBURBAN", "OUTSIDE_DHAKA", "INTER_DISTRICT"] as const;
+
+type Freshness = {
+  label: string;
+  tone: "fresh" | "recent" | "stale" | "old";
+};
+
+function getFreshness(
+  lastVerifiedAt: string | null,
+  lastVerifiedDate: string | null,
+): Freshness | null {
+  const raw = lastVerifiedAt ?? lastVerifiedDate;
+  if (!raw) return null;
+  const verified = new Date(raw);
+  if (Number.isNaN(verified.getTime())) return null;
+  const days = Math.floor((Date.now() - verified.getTime()) / 86_400_000);
+  const monthDay = verified.toLocaleDateString("en-US", { month: "short", day: "numeric" });
+  const monthYear = verified.toLocaleDateString("en-US", { month: "short", year: "numeric" });
+  if (days <= 7) return { label: "🟢 Verified this week", tone: "fresh" };
+  if (days <= 30) return { label: `Verified ${monthDay}`, tone: "recent" };
+  if (days <= 90) return { label: `🟡 Verified ${monthYear}`, tone: "stale" };
+  return { label: "🔴 Confirm before booking", tone: "old" };
+}
 
 const searchSchema = z
   .object({
@@ -95,11 +117,14 @@ function ResultsPage() {
     },
   });
 
+  const [codMode, setCodMode] = useState<"cod" | "prepaid">("cod");
+  const effectiveCod = codMode === "prepaid" ? 0 : search.cod;
+
   const quotes: SlabQuoteResult[] = data
     ? rankSlabQuotes(data, {
         canonicalZone: search.canonicalZone,
         weight: search.weight,
-        codAmount: search.cod,
+        codAmount: effectiveCod,
       })
     : [];
 
@@ -109,12 +134,13 @@ function ResultsPage() {
         canonical_zone: search.canonicalZone,
         zone_label: zoneLabel,
         weight: search.weight,
-        cod: search.cod,
+        cod: effectiveCod,
+        cod_mode: codMode,
         resultCount: quotes.length,
       });
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [isLoading, search.canonicalZone, search.weight, search.cod]);
+  }, [isLoading, search.canonicalZone, search.weight, effectiveCod, codMode]);
 
   const hasEstimated =
     quotes.length > 0 &&
@@ -138,6 +164,27 @@ function ResultsPage() {
     }
   };
 
+  const handleCopyWhatsApp = async () => {
+    try {
+      const url = typeof window !== "undefined" ? window.location.href : "";
+      const top = quotes.slice(0, 3);
+      const codLine =
+        codMode === "prepaid"
+          ? "Prepaid"
+          : `COD ৳${search.cod}`;
+      const header = `CourierWise Quote\n${search.weight}kg • ${zoneLabel} • ${codLine}`;
+      const lines = top
+        .map((q) => `${q.courier_name} — ৳${q.total.toFixed(0)}`)
+        .join("\n");
+      const footer = `Rates verified May 2026\n${url}`;
+      const text = `${header}\n\n${lines}\n\n${footer}`;
+      await navigator.clipboard.writeText(text);
+      toast.success("WhatsApp summary copied");
+    } catch {
+      toast.error("Couldn't copy summary. Try again.");
+    }
+  };
+
   return (
     <div className="min-h-screen bg-background">
       <header className="mx-auto flex max-w-2xl items-center gap-2 px-4 py-4">
@@ -149,12 +196,46 @@ function ResultsPage() {
         <h1 className="text-lg font-semibold">Comparison results</h1>
       </header>
 
-      <main className="mx-auto max-w-2xl px-4 pb-16">
+      <div className="sticky top-0 z-20 border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/80">
+        <div className="mx-auto flex max-w-2xl items-center justify-center gap-1 px-4 py-2">
+          <div className="inline-flex rounded-full border bg-muted p-0.5 text-xs font-medium">
+            <button
+              type="button"
+              onClick={() => setCodMode("cod")}
+              className={`rounded-full px-3 py-1 transition ${
+                codMode === "cod"
+                  ? "bg-background text-foreground shadow-sm"
+                  : "text-muted-foreground"
+              }`}
+              aria-pressed={codMode === "cod"}
+            >
+              With COD
+            </button>
+            <button
+              type="button"
+              onClick={() => setCodMode("prepaid")}
+              className={`rounded-full px-3 py-1 transition ${
+                codMode === "prepaid"
+                  ? "bg-background text-foreground shadow-sm"
+                  : "text-muted-foreground"
+              }`}
+              aria-pressed={codMode === "prepaid"}
+            >
+              Prepaid
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <main className="mx-auto max-w-2xl px-4 pb-16 pt-3">
         <div className="rounded-xl border bg-card p-3 text-xs text-muted-foreground">
           <div className="flex flex-wrap gap-x-4 gap-y-1">
             <span><span className="text-foreground font-medium">Zone:</span> {zoneLabel}</span>
             <span><span className="text-foreground font-medium">Weight:</span> {search.weight} kg</span>
-            <span><span className="text-foreground font-medium">COD:</span> ৳{search.cod}</span>
+            <span>
+              <span className="text-foreground font-medium">COD:</span>{" "}
+              {codMode === "prepaid" ? "Prepaid (no COD)" : `৳${search.cod}`}
+            </span>
             <span><span className="text-foreground font-medium">Route:</span> {search.pickup} → {search.destination}</span>
           </div>
         </div>
@@ -185,7 +266,11 @@ function ResultsPage() {
           </div>
         )}
 
-        <div className="mt-3 flex justify-end">
+        <div className="mt-3 flex flex-wrap justify-end gap-2">
+          <Button variant="outline" size="sm" onClick={handleCopyWhatsApp} disabled={quotes.length === 0}>
+            <MessageCircle className="mr-2 h-4 w-4" />
+            Copy WhatsApp summary
+          </Button>
           <Button variant="outline" size="sm" onClick={handleCopyLink}>
             <Copy className="mr-2 h-4 w-4" />
             Copy quote link
@@ -224,7 +309,7 @@ function ResultsPage() {
               canonicalZone={search.canonicalZone}
               zoneLabel={zoneLabel}
               userWeight={search.weight}
-              userCod={search.cod}
+              userCod={effectiveCod}
             />
           ))}
           {!isLoading && quotes.length === 0 && (
@@ -328,11 +413,28 @@ function ResultCard({
         <p className="mt-3 text-xs text-muted-foreground">{quote.slab.notes}</p>
       )}
 
+      {quote.courier_name === "Delivery Tiger" && canonicalZone !== "INSIDE_DHAKA" && (
+        <p className="mt-2 text-[11px] text-muted-foreground">
+          Flat rate pricing across Bangladesh.
+        </p>
+      )}
+
+      {(() => {
+        const freshness = getFreshness(quote.slab.last_verified_at, quote.slab.last_verified_date);
+        if (!freshness) return null;
+        const toneClass =
+          freshness.tone === "fresh"
+            ? "text-emerald-700 dark:text-emerald-400"
+            : freshness.tone === "old"
+              ? "text-destructive"
+              : "text-muted-foreground";
+        return (
+          <p className={`mt-2 text-[11px] ${toneClass}`}>{freshness.label}</p>
+        );
+      })()}
+
       <div className="mt-3 flex items-center justify-between gap-2">
         <div className="flex flex-col gap-0.5 text-[11px] text-muted-foreground">
-          {quote.slab.last_verified_date && (
-            <span>Last verified: {quote.slab.last_verified_date}</span>
-          )}
           {quote.slab.source_url && (
             <a
               href={quote.slab.source_url}
