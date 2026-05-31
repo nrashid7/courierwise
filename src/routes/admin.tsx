@@ -467,7 +467,7 @@ function SlabDialog({
             source_url: sourceUrl || null,
             source_type: sourceType || null,
             verification_status: verificationStatus,
-            confidence_score: confidence,
+            confidence_score: Math.max(0, Math.min(1, Number(confidence) || 0)),
             estimated_flag: estimatedFlag,
             verified_by: verifiedBy || null,
             last_verified_date: verified || null,
