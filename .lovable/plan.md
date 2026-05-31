@@ -1,69 +1,58 @@
-# CourierWise — Canonical Rates + Trust Architecture
+## Feature 1 — Auto Zone Detection
 
-The current schema/code uses:
-- `verification_status` as lowercase enum (`official`, `community_verified`, `estimated`…)
-- `confidence_score` as TEXT (`high`/`medium`/`low`)
-- Zone strings stored as human-readable text ("Inside Dhaka", "Dhaka Suburbs", "Outside Dhaka", "Outside Dhaka → Outside Dhaka")
+**`src/lib/courier.ts`**
+- Add `inferZone(pickup, destination): CanonicalZone` with case-insensitive/trimmed comparisons.
+  - Constants: `DHAKA = "dhaka"`, `SUBURBAN = ["gazipur","savar","narayanganj","keraniganj","tongi"]`.
+  - Rules in order:
+    1. pickup=dhaka & destination=dhaka → `INSIDE_DHAKA`
+    2. pickup=dhaka & destination ∈ SUBURBAN → `SUBURBAN`
+    3. pickup=dhaka & destination≠dhaka → `OUTSIDE_DHAKA`
+    4. fallback (pickup≠dhaka & destination≠dhaka) → `INTER_DISTRICT`
+- `legacyZoneToCanonical()` already accepts new + old labels — leave as-is.
 
-You're asking for uppercase enums, numeric confidence, canonical zone keys, rate limiting, admin filters, and a fresh seed. Below is the staged plan.
+**`src/routes/compare.tsx`**
+- On every `pickup`/`destination` change, call `setCanonicalZone(inferZone(pickup, destination))` (via `useEffect` on those two values).
+- Below destination field show subtle muted text: `Detected zone: {CANONICAL_ZONE_LABELS[canonicalZone]}`.
+- Wrap the existing zone `Select` (and the explanatory paragraph) in a collapsed `Collapsible` titled "Advanced override" with proper `aria-expanded` / `aria-controls`. Selector remains fully functional when expanded; manual selection just sets `canonicalZone` directly (auto-infer effect still re-runs if route fields change afterward — acceptable per spec).
 
-## 1. Migration (`<new>_canonical_rates.sql`)
+## Feature 2 — Bulk Parcel Mode (inline, no new route)
 
-Schema changes:
-- Drop the lowercase CHECK on `verification_status`; add new CHECK for `VERIFIED`, `COMMUNITY_VERIFIED`, `ESTIMATED`, `OUTDATED`, `DISPUTED`.
-- Convert `confidence_score` TEXT → NUMERIC(3,2). Map existing `high→0.95`, `medium→0.7`, `low→0.35` during the type swap (USING clause).
-- Add `canonical_zone` TEXT to `courier_rate_slabs` with CHECK in (`INSIDE_DHAKA`, `SUBURBAN`, `OUTSIDE_DHAKA`, `INTER_DISTRICT`). Keep human `zone` column for UI labels.
-- Update `zone_mappings.normalized_zone` values to the new enum keys; backfill.
-- Add `verification_submissions_log` table (ip text, created_at) for IP throttling on `rate_verifications` + `rate_reports`. RLS: anon insert with rate-limit check via trigger (max 5 per IP per hour).
+**`src/routes/compare.tsx`** — add Tabs (`Single Parcel` | `Bulk Parcels`), default `single`. Tab state is local `useState` only — not URL, not search params.
 
-Seed:
-- `DELETE FROM courier_rate_slabs;`
-- Re-insert verified May 2026 rates (same numbers as last migration) but with:
-  - `verification_status` in new uppercase casing per courier rule (Pathao=VERIFIED/0.95, REDX=COMMUNITY_VERIFIED/0.70, Steadfast 0–1kg=VERIFIED/0.95 & higher=ESTIMATED/0.35+estimated_flag, Delivery Tiger=COMMUNITY_VERIFIED/0.65).
-  - `canonical_zone` mapped from zone string.
-  - `notes` set to canonical strings ("Verified from official courier pricing", "Community verified by merchants", "Estimated from adjacent courier slabs").
-  - Real `source_url` per courier (pathao.com/courier, redx.com.bd, steadfast.com.bd, deliverytiger.com.bd).
-  - `last_verified_at = '2026-05-01'`.
+Shared inputs (pickup, destination, inferred zone, advanced override) sit above the tabs so they apply to both modes.
 
-## 2. Code changes
+### Single tab
+Existing form + submit → `/results` navigation, unchanged.
 
-- `src/lib/courier.ts`:
-  - `ConfidenceScore` → `number` (0..1).
-  - `VerificationStatus` uppercase union.
-  - `confidenceLabel` rewritten: VERIFIED→"Verified", COMMUNITY_VERIFIED→"Community Verified", ESTIMATED or estimated_flag→"Estimated", and tone derived from `confidence_score` numeric.
-  - Add `CanonicalZone` type + `CANONICAL_ZONE_LABELS` map for display.
-  - Quote engine unchanged (already correct: overflow ceil, min_charge floor, COD-zero guard).
+### Bulk tab
+- Local state `parcels: { weight: string; cod: string }[]`, init 3 empty rows.
+- Mobile-first row UI: weight + COD inputs, remove button per row, "Add parcel" button below.
+- Row cap 20; attempt to exceed → `toast.error("Maximum 20 parcels per bulk quote.")`.
+- Per-row validation: weight `>0 && <=50`, cod `>=0 && <=100000`. Fully-empty rows ignored. Invalid non-empty rows skipped from compute and surfaced inline.
+- Compare button disabled when no valid rows.
 
-- `src/lib/slabs.functions.ts`: update Zod schema (`confidence_score: z.number().min(0).max(1)`, uppercase enum, add `canonical_zone` field).
+#### Data fetching
+- Single `useQuery` keyed on `["courier_rate_slabs", canonicalZone]`, runs only when bulk tab is active and there's ≥1 valid row. Same shape as `results.tsx` (active=true + canonical_zone filter). Slabs fetched once, reused for all rows.
 
-- `src/lib/verifications.functions.ts` + `src/lib/reports.functions.ts`: insert into `verification_submissions_log` and check count(ip, last hour) ≤ 5; throw "Too many submissions, try again later" otherwise. Keep honeypot.
+#### Compute (in-memory, no extra endpoints)
+- For each valid row, run existing `rankSlabQuotes(slabs, { canonicalZone, weight, codAmount })`.
+- Aggregate per-courier totals across rows.
+- Exclude any courier missing a quote for any included row (prevents broken layout / partial columns).
+- Sort couriers by ascending total.
 
-- `src/routes/results.tsx`:
-  - Update badge tones to read numeric confidence.
-  - Show "Last verified <date>" line + clickable source URL.
-  - Add prominent "⚠ Estimated rate" warning chip when `estimated_flag`.
+#### Bulk results UI (rendered inline below the form)
+1. **Savings header**: "Best overall courier: X" + per-other-courier delta lines (`৳N vs Pathao`).
+2. **Results table**: rows = each parcel (`Wkg / COD V`), columns = surviving couriers, sticky `TOTAL` row at bottom. Horizontally scrollable on mobile. Cheapest column gets subtle stronger border/bg via existing tokens.
+3. **Copy WhatsApp summary** button. Uses same dynamic `verificationLabel` logic as `results.tsx` (newest `last_verified_date`/`last_verified_at` across the slabs used → `Rates verified {Month YYYY}`, else fallback). URL = `window.location.href` (the `/compare` page) — no placeholder.
 
-- `src/routes/admin.tsx`:
-  - Slab list filters: courier dropdown, verification status dropdown, "Show estimated only" toggle.
-  - Update slab form: numeric confidence input, uppercase status options, canonical_zone select.
+#### Analytics
+- `bulk_quote_generated` on compute completion (debounced to one fire per submit click): `{ parcel_count, canonical_zone, total_cod, total_weight }`.
+- `bulk_whatsapp_copied` on copy success: `{ parcel_count, cheapest_courier }`.
 
-- `src/routes/compare.tsx`: remove the literal string "Sub-Dhaka" (already migrated to "Dhaka Suburbs" — verify and tidy helper text).
+## Out of scope (explicit)
+Pricing engine math, ranking logic, single-quote calc, visual redesign, new routes, new DB/API endpoints, accounts/dashboards/booking/tracking, search-param tab persistence, `/results/bulk`.
 
-- Grep & remove any remaining `"Sub-Dhaka"` literals.
-
-## 3. Out of scope (explicit)
-
-- No new public API.
-- No change to pricing engine math (already correct per last fix).
-- No change to `rate_reports` schema beyond the rate-limit log.
-
-## 4. Acceptance
-
-- Migration runs cleanly; confidence_score is numeric; statuses are uppercase.
-- Results page shows verified/community/estimated badges with correct tones and source link.
-- Admin can filter slabs by courier/status/estimated.
-- Submitting >5 verifications/reports from same IP within 1h returns clear error.
-- Quote ranking still sorts by `total` ascending; COD=0 → codFee=0.
-- No remaining "Sub-Dhaka" or "Sample rate" strings in repo.
-
-Confirm and I'll execute migration + code changes (large multi-file diff).
+## Technical notes
+- Reuse existing `supabase` client, `rankSlabQuotes`, `CANONICAL_ZONE_LABELS`, `trackEvent`, `Collapsible`, `Tabs`, `Table` shadcn components.
+- Keep all styling via semantic tokens (no raw colors).
+- No edits to `results.tsx`, pricing files, or DB migrations.
