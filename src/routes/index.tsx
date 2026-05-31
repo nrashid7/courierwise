@@ -1,14 +1,17 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
+import { useQuery } from "@tanstack/react-query";
 import {
   ArrowRight,
   BadgeCheck,
   Calculator,
   MapPin,
+  Package,
   ShieldCheck,
   Truck,
   Wallet,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { supabase } from "@/integrations/supabase/client";
 
 export const Route = createFileRoute("/")({
   head: () => ({
@@ -17,13 +20,13 @@ export const Route = createFileRoute("/")({
       {
         name: "description",
         content:
-          "CourierWise helps f-commerce sellers estimate delivery cost across Pathao, REDX, Steadfast, and Delivery Tiger.",
+          "Compare BD courier pricing for a single parcel or a full day of orders. See total delivery + COD costs side by side before booking.",
       },
       { property: "og:title", content: "Compare Pathao, REDX, Steadfast & Delivery Tiger rates — CourierWise" },
       {
         property: "og:description",
         content:
-          "Compare Pathao, REDX, Steadfast and Delivery Tiger rates before you book.",
+          "Compare BD courier pricing for a single parcel or a full day of orders before you book.",
       },
       { property: "og:url", content: "https://courierwise.lovable.app/" },
     ],
@@ -34,7 +37,41 @@ export const Route = createFileRoute("/")({
   component: Index,
 });
 
+function useNewestVerificationLabel() {
+  const { data } = useQuery({
+    queryKey: ["newest_verification"],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("courier_rate_slabs")
+        .select("last_verified_date, last_verified_at")
+        .eq("active", true);
+      if (error) throw error;
+      let newest: number | null = null;
+      for (const row of data ?? []) {
+        const raw =
+          (row as { last_verified_date?: string | null; last_verified_at?: string | null })
+            .last_verified_date ??
+          (row as { last_verified_at?: string | null }).last_verified_at;
+        if (!raw) continue;
+        const t = new Date(raw).getTime();
+        if (!Number.isNaN(t) && (newest === null || t > newest)) newest = t;
+      }
+      return newest;
+    },
+    staleTime: 5 * 60 * 1000,
+  });
+
+  if (data == null) return "Rates should be verified before booking";
+  const monthYear = new Date(data).toLocaleDateString("en-US", {
+    month: "long",
+    year: "numeric",
+  });
+  return `Rates independently verified • Updated ${monthYear}`;
+}
+
 function Index() {
+  const verificationLabel = useNewestVerificationLabel();
+
   return (
     <div className="min-h-dvh bg-background">
       <header className="mx-auto flex max-w-5xl items-center justify-between px-4 py-4 sm:px-6">
@@ -68,8 +105,9 @@ function Index() {
               Pick the courier that protects your margin before you book.
             </h1>
             <p className="mt-4 max-w-xl text-base leading-7 text-muted-foreground sm:text-lg">
-              Compare estimated Pathao, REDX, Steadfast, and Delivery Tiger
-              charges by route, weight, and COD amount in one quick flow.
+              Compare courier pricing across Bangladesh for a single parcel or
+              an entire day's orders. See total delivery + COD costs side by
+              side before booking.
             </p>
             <div className="mt-7 flex flex-col gap-3 sm:flex-row sm:items-center">
               <Link to="/compare">
@@ -83,14 +121,17 @@ function Index() {
                 No login. No booking lock-in.
               </div>
             </div>
+            <p className="mt-4 text-xs font-medium text-muted-foreground">
+              {verificationLabel}
+            </p>
           </div>
 
           <div className="rounded-2xl border bg-card p-4 shadow-xl shadow-foreground/5">
             <div className="rounded-xl bg-secondary p-4">
               <div className="flex items-center justify-between text-sm">
                 <span className="font-semibold">Sample quote</span>
-                <span className="rounded-full bg-primary px-2 py-1 text-[11px] font-semibold text-primary-foreground">
-                  Cheapest highlighted
+                <span className="rounded-full bg-muted px-2 py-1 text-[11px] font-semibold text-muted-foreground">
+                  Illustrative example only
                 </span>
               </div>
               <div className="mt-4 grid grid-cols-[1fr_auto_1fr] items-center gap-2 text-sm">
@@ -108,7 +149,7 @@ function Index() {
           </div>
         </section>
 
-        <section className="mt-10 grid gap-3 sm:grid-cols-3">
+        <section className="mt-10 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
           <Feature
             icon={<Calculator className="h-5 w-5" />}
             title="Ranked by total cost"
@@ -124,12 +165,26 @@ function Index() {
             title="BD delivery zones"
             text="Inside Dhaka, Dhaka Suburbs, Outside Dhaka, and inter-district."
           />
+          <Feature
+            icon={<Package className="h-5 w-5" />}
+            title="Bulk shipping optimizer"
+            text="Compare a full day's parcels across all couriers. See total savings instantly."
+          />
         </section>
 
         <p className="mt-8 max-w-2xl text-sm leading-6 text-muted-foreground">
           CourierWise is independent and not affiliated with any courier company.
-          Rates are estimates and should be verified before booking.
+          Rates are estimates and should be verified before booking.{" "}
+          <Link to="/compare" className="font-medium text-primary underline-offset-4 hover:underline">
+            Found an incorrect courier rate? Help improve CourierWise.
+          </Link>
         </p>
+
+        <footer className="mt-10 flex flex-wrap items-center gap-x-5 gap-y-2 border-t pt-6 text-sm text-muted-foreground">
+          <Link to="/about" className="hover:text-foreground">About</Link>
+          <Link to="/privacy" className="hover:text-foreground">Privacy</Link>
+          <Link to="/compare" className="hover:text-foreground">Compare rates</Link>
+        </footer>
       </main>
     </div>
   );
