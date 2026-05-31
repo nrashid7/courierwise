@@ -454,6 +454,7 @@ function SlabDialog({
           slab: {
             courier_name: courier,
             zone,
+            canonical_zone: zoneToCanonical(zone),
             min_weight: Number(minWeight) || 0,
             max_weight: Number(maxWeight) || 0,
             price: Number(price) || 0,
