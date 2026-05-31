@@ -127,6 +127,8 @@ function AdminPanel({ passphrase, onLock }: { passphrase: string; onLock: () => 
   const list = useServerFn(listAllSlabs);
   const [courierFilter, setCourierFilter] = useState<string>("all");
   const [zoneFilter, setZoneFilter] = useState<string>("all");
+  const [statusFilter, setStatusFilter] = useState<string>("all");
+  const [estimatedOnly, setEstimatedOnly] = useState(false);
 
   const { data, isLoading, error } = useQuery({
     queryKey: ["admin_slabs"],
@@ -135,13 +137,15 @@ function AdminPanel({ passphrase, onLock }: { passphrase: string; onLock: () => 
   });
 
   const filtered = useMemo(() => {
-    const all = (data?.slabs ?? []) as CourierRateSlab[];
+    const all = (data?.slabs ?? []) as unknown as CourierRateSlab[];
     return all.filter((s) => {
       if (courierFilter !== "all" && s.courier_name !== courierFilter) return false;
       if (zoneFilter !== "all" && s.zone !== zoneFilter) return false;
+      if (statusFilter !== "all" && s.verification_status !== statusFilter) return false;
+      if (estimatedOnly && !s.estimated_flag) return false;
       return true;
     });
-  }, [data, courierFilter, zoneFilter]);
+  }, [data, courierFilter, zoneFilter, statusFilter, estimatedOnly]);
 
   if (error) {
     return (
