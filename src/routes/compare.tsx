@@ -125,17 +125,17 @@ function ComparePage() {
           <form onSubmit={onSubmit} className="mt-6 space-y-6">
             <FormSection icon={<MapPin className="h-4 w-4" />} title="Route">
               <div className="grid gap-4 sm:grid-cols-2">
-                <Field label="Pickup city">
+                <Field id="cmp-pickup" label="Pickup city">
                   <Select value={pickup} onValueChange={setPickup}>
-                    <SelectTrigger className="h-11"><SelectValue /></SelectTrigger>
+                    <SelectTrigger id="cmp-pickup" className="h-11"><SelectValue /></SelectTrigger>
                     <SelectContent>
                       {CITIES.map((c) => <SelectItem key={c} value={c}>{c}</SelectItem>)}
                     </SelectContent>
                   </Select>
                 </Field>
-                <Field label="Destination city">
+                <Field id="cmp-destination" label="Destination city">
                   <Select value={destination} onValueChange={setDestination}>
-                    <SelectTrigger className="h-11"><SelectValue /></SelectTrigger>
+                    <SelectTrigger id="cmp-destination" className="h-11"><SelectValue /></SelectTrigger>
                     <SelectContent>
                       {CITIES.map((c) => <SelectItem key={c} value={c}>{c}</SelectItem>)}
                     </SelectContent>
@@ -145,12 +145,12 @@ function ComparePage() {
             </FormSection>
 
             <FormSection icon={<Package className="h-4 w-4" />} title="Delivery zone">
-              <Field label="Delivery zone">
+              <Field id="cmp-zone" label="Delivery zone">
                 <Select
                   value={canonicalZone}
                   onValueChange={(v) => setCanonicalZone(v as CanonicalZone)}
                 >
-                  <SelectTrigger className="h-11"><SelectValue /></SelectTrigger>
+                  <SelectTrigger id="cmp-zone" className="h-11"><SelectValue /></SelectTrigger>
                   <SelectContent>
                     {CANONICAL_ZONES.map((z) => (
                       <SelectItem key={z} value={z}>{CANONICAL_ZONE_LABELS[z]}</SelectItem>
@@ -168,8 +168,9 @@ function ComparePage() {
 
             <FormSection icon={<Wallet className="h-4 w-4" />} title="Parcel and payment">
               <div className="grid gap-4 sm:grid-cols-2">
-                <Field label="Parcel weight (kg)">
+                <Field id="cmp-weight" label="Parcel weight (kg)">
                   <Input
+                    id="cmp-weight"
                     className="h-11"
                     type="number"
                     inputMode="decimal"
@@ -180,8 +181,9 @@ function ComparePage() {
                     required
                   />
                 </Field>
-                <Field label="COD amount (BDT)">
+                <Field id="cmp-cod" label="COD amount (BDT)">
                   <Input
+                    id="cmp-cod"
                     className="h-11"
                     type="number"
                     inputMode="numeric"
@@ -200,8 +202,9 @@ function ComparePage() {
                 </div>
               )}
 
-              <Field label="Product type (optional)">
+              <Field id="cmp-product-type" label="Product type (optional)">
                 <Input
+                  id="cmp-product-type"
                   className="h-11"
                   value={productType}
                   onChange={(e) => setProductType(e.target.value)}
@@ -209,6 +212,7 @@ function ComparePage() {
                 />
               </Field>
             </FormSection>
+
 
             <div className="hidden sm:block">
               <Button type="submit" size="lg" className="h-12 w-full text-base">
