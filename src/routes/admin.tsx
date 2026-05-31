@@ -187,6 +187,7 @@ function AdminPanel({ passphrase, onLock }: { passphrase: string; onLock: () => 
           )}
         </div>
         <ReportsSection passphrase={passphrase} />
+        <VerificationsSection passphrase={passphrase} />
       </main>
     </div>
   );
