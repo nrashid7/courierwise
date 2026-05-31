@@ -19,51 +19,75 @@ export type Database = {
           active: boolean
           cod_fixed_fee: number
           cod_percent: number
+          confidence_score: string
           courier_name: string
           created_at: string
           estimated_delivery_time: string | null
+          estimated_flag: boolean
+          extra_kg_price: number
           id: string
+          last_verified_at: string | null
           last_verified_date: string | null
           max_weight: number
+          min_charge: number
           min_weight: number
           notes: string | null
           price: number
+          source_type: string | null
           source_url: string | null
           updated_at: string
+          verification_status: string
+          verified_by: string | null
           zone: string
         }
         Insert: {
           active?: boolean
           cod_fixed_fee?: number
           cod_percent?: number
+          confidence_score?: string
           courier_name: string
           created_at?: string
           estimated_delivery_time?: string | null
+          estimated_flag?: boolean
+          extra_kg_price?: number
           id?: string
+          last_verified_at?: string | null
           last_verified_date?: string | null
           max_weight: number
+          min_charge?: number
           min_weight: number
           notes?: string | null
           price: number
+          source_type?: string | null
           source_url?: string | null
           updated_at?: string
+          verification_status?: string
+          verified_by?: string | null
           zone: string
         }
         Update: {
           active?: boolean
           cod_fixed_fee?: number
           cod_percent?: number
+          confidence_score?: string
           courier_name?: string
           created_at?: string
           estimated_delivery_time?: string | null
+          estimated_flag?: boolean
+          extra_kg_price?: number
           id?: string
+          last_verified_at?: string | null
           last_verified_date?: string | null
           max_weight?: number
+          min_charge?: number
           min_weight?: number
           notes?: string | null
           price?: number
+          source_type?: string | null
           source_url?: string | null
           updated_at?: string
+          verification_status?: string
+          verified_by?: string | null
           zone?: string
         }
         Relationships: []
@@ -161,6 +185,72 @@ export type Database = {
           user_cod_amount?: number | null
           user_weight?: number | null
           zone?: string | null
+        }
+        Relationships: []
+      }
+      rate_verifications: {
+        Row: {
+          courier_name: string
+          created_at: string
+          evidence_url: string | null
+          id: string
+          notes: string | null
+          slab_id: string | null
+          status: string
+          submitted_price: number | null
+          submitter_contact: string | null
+          weight: number | null
+          zone: string | null
+        }
+        Insert: {
+          courier_name: string
+          created_at?: string
+          evidence_url?: string | null
+          id?: string
+          notes?: string | null
+          slab_id?: string | null
+          status?: string
+          submitted_price?: number | null
+          submitter_contact?: string | null
+          weight?: number | null
+          zone?: string | null
+        }
+        Update: {
+          courier_name?: string
+          created_at?: string
+          evidence_url?: string | null
+          id?: string
+          notes?: string | null
+          slab_id?: string | null
+          status?: string
+          submitted_price?: number | null
+          submitter_contact?: string | null
+          weight?: number | null
+          zone?: string | null
+        }
+        Relationships: []
+      }
+      zone_mappings: {
+        Row: {
+          courier_name: string | null
+          created_at: string
+          district: string
+          id: string
+          normalized_zone: string
+        }
+        Insert: {
+          courier_name?: string | null
+          created_at?: string
+          district: string
+          id?: string
+          normalized_zone: string
+        }
+        Update: {
+          courier_name?: string | null
+          created_at?: string
+          district?: string
+          id?: string
+          normalized_zone?: string
         }
         Relationships: []
       }

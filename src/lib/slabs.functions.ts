@@ -14,15 +14,24 @@ function checkAdmin(passphrase: string) {
 
 const slabSchema = z.object({
   courier_name: z.string().min(1).max(100),
-  zone: z.string().min(1).max(50),
+  zone: z.string().min(1).max(100),
   min_weight: z.number().min(0).max(1000),
   max_weight: z.number().min(0).max(1000),
   price: z.number().min(0).max(1000000),
   cod_percent: z.number().min(0).max(100),
   cod_fixed_fee: z.number().min(0).max(100000),
+  extra_kg_price: z.number().min(0).max(100000).default(0),
+  min_charge: z.number().min(0).max(100000).default(0),
   estimated_delivery_time: z.string().max(100).nullable().optional(),
   notes: z.string().max(2000).nullable().optional(),
   source_url: z.string().max(500).nullable().optional(),
+  source_type: z.string().max(50).nullable().optional(),
+  verification_status: z
+    .enum(["official", "community_verified", "estimated", "outdated", "disputed"])
+    .default("estimated"),
+  confidence_score: z.enum(["high", "medium", "low"]).default("low"),
+  estimated_flag: z.boolean().default(true),
+  verified_by: z.string().max(200).nullable().optional(),
   last_verified_date: z.string().nullable().optional(),
   active: z.boolean(),
 });
@@ -53,7 +62,6 @@ export const upsertSlab = createServerFn({ method: "POST" })
       throw new Error("max_weight must be greater than min_weight");
     }
 
-    // Overlap check: same courier + zone, existing.min < new.max AND existing.max > new.min
     const { data: existing, error: exErr } = await supabaseAdmin
       .from("courier_rate_slabs")
       .select("id, min_weight, max_weight")
@@ -74,14 +82,21 @@ export const upsertSlab = createServerFn({ method: "POST" })
       );
     }
 
+    const payload = {
+      ...data.slab,
+      last_verified_at: new Date().toISOString(),
+    };
+
     if (data.id) {
       const { error } = await supabaseAdmin
         .from("courier_rate_slabs")
-        .update({ ...data.slab, updated_at: new Date().toISOString() })
+        .update({ ...payload, updated_at: new Date().toISOString() })
         .eq("id", data.id);
       if (error) throw new Error(error.message);
     } else {
-      const { error } = await supabaseAdmin.from("courier_rate_slabs").insert(data.slab);
+      const { error } = await supabaseAdmin
+        .from("courier_rate_slabs")
+        .insert(payload);
       if (error) throw new Error(error.message);
     }
     return { ok: true };

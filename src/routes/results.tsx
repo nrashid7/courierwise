@@ -22,9 +22,11 @@ import { supabase } from "@/integrations/supabase/client";
 import {
   type CourierRateSlab,
   type SlabQuoteResult,
+  confidenceLabel,
   rankSlabQuotes,
 } from "@/lib/courier";
 import { submitRateReport } from "@/lib/rates.functions";
+import { submitVerification } from "@/lib/verifications.functions";
 import { useServerFn } from "@tanstack/react-start";
 
 const searchSchema = z.object({
@@ -82,10 +84,13 @@ function ResultsPage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isLoading, search.zone, search.weight, search.cod]);
 
-  const allSample =
+  const hasEstimated =
     quotes.length > 0 &&
-    quotes.every((q) =>
-      (q.slab.notes ?? "").toLowerCase().includes("sample rate"),
+    quotes.some(
+      (q) =>
+        q.slab.verification_status === "estimated" ||
+        q.slab.estimated_flag ||
+        q.overflow,
     );
 
   const weightOverLimit = search.weight > 3;
@@ -112,19 +117,20 @@ function ResultsPage() {
         </div>
 
         <p className="mt-3 text-xs text-muted-foreground">
-          Rates are estimates based on manually maintained courier rate tables.
+          Rates are based on publicly available courier pricing (verified May 2026).
+          Final charges may vary by parcel size, remote area surcharges, and courier promotions.
         </p>
 
-        {allSample && (
+        {hasEstimated && (
           <div
             role="alert"
             className="mt-3 flex items-start gap-2 rounded-lg border border-warning/40 bg-warning/10 px-3 py-2 text-xs font-medium text-warning-foreground"
           >
             <Info className="mt-0.5 h-4 w-4 shrink-0 text-warning" />
             <p>
-              Verified rates required before public launch — every rate shown
-              here is a sample placeholder. Replace with verified merchant
-              rates before sharing publicly.
+              Some rates below are <strong>estimated</strong> — couriers do not publish full pricing
+              for every weight slab. Verify with your courier before booking, and{" "}
+              <strong>submit a correction</strong> using the button on any card to help us improve accuracy.
             </p>
           </div>
         )}
@@ -187,13 +193,21 @@ function ResultCard({
   userCod: number;
 }) {
   const cheapest = rank === 1;
+  const conf = confidenceLabel(quote.slab);
+  const toneClasses =
+    conf.tone === "success"
+      ? "bg-emerald-500/15 text-emerald-700 dark:text-emerald-400 border border-emerald-500/30"
+      : conf.tone === "warning"
+        ? "bg-amber-500/15 text-amber-700 dark:text-amber-400 border border-amber-500/30"
+        : "bg-muted text-muted-foreground border border-border";
+
   return (
     <div
       className={`rounded-xl border bg-card p-4 ${cheapest ? "border-primary ring-1 ring-primary/30" : ""}`}
     >
       <div className="flex items-start justify-between gap-3">
-        <div>
-          <div className="flex items-center gap-2">
+        <div className="min-w-0">
+          <div className="flex flex-wrap items-center gap-2">
             <span className="text-xs font-medium text-muted-foreground">#{rank}</span>
             <h3 className="text-base font-semibold">{quote.courier_name}</h3>
             {cheapest && (
@@ -202,6 +216,12 @@ function ResultCard({
                 Cheapest
               </span>
             )}
+            <span
+              className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide ${toneClasses}`}
+              title={`Verification: ${quote.slab.verification_status} · Confidence: ${quote.slab.confidence_score}`}
+            >
+              {conf.label}
+            </span>
           </div>
           <p className="mt-0.5 text-xs text-muted-foreground">
             {quote.weightRangeLabel}
@@ -244,12 +264,20 @@ function ResultCard({
             </a>
           )}
         </div>
-        <ReportDialog
-          courierName={quote.courier_name}
-          zone={zone}
-          userWeight={userWeight}
-          userCod={userCod}
-        />
+        <div className="flex gap-1">
+          <VerifyDialog
+            slabId={quote.slab.id}
+            courierName={quote.courier_name}
+            zone={zone}
+            userWeight={userWeight}
+          />
+          <ReportDialog
+            courierName={quote.courier_name}
+            zone={zone}
+            userWeight={userWeight}
+            userCod={userCod}
+          />
+        </div>
       </div>
     </div>
   );
@@ -371,6 +399,119 @@ function ReportDialog({
           <DialogFooter>
             <Button type="submit" disabled={submitting} className="w-full">
               {submitting ? "Submitting…" : "Submit report"}
+            </Button>
+          </DialogFooter>
+        </form>
+      </DialogContent>
+    </Dialog>
+  );
+}
+
+function VerifyDialog({
+  slabId,
+  courierName,
+  zone,
+  userWeight,
+}: {
+  slabId: string;
+  courierName: string;
+  zone: string;
+  userWeight: number;
+}) {
+  const [open, setOpen] = useState(false);
+  const [submittedPrice, setSubmittedPrice] = useState("");
+  const [evidenceUrl, setEvidenceUrl] = useState("");
+  const [submitterContact, setSubmitterContact] = useState("");
+  const [notes, setNotes] = useState("");
+  const [submitting, setSubmitting] = useState(false);
+  const submit = useServerFn(submitVerification);
+
+  const onSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!submittedPrice && !notes.trim()) {
+      toast.error("Provide a corrected price or a note.");
+      return;
+    }
+    setSubmitting(true);
+    try {
+      await submit({
+        data: {
+          slab_id: slabId,
+          courier_name: courierName,
+          zone,
+          weight: userWeight,
+          submitted_price: submittedPrice ? Number(submittedPrice) : null,
+          evidence_url: evidenceUrl.trim() || null,
+          submitter_contact: submitterContact.trim() || null,
+          notes: notes.trim() || null,
+        },
+      });
+      toast.success("Thanks — verification submitted for review.");
+      setOpen(false);
+      setSubmittedPrice(""); setEvidenceUrl(""); setSubmitterContact(""); setNotes("");
+    } catch (err) {
+      toast.error((err as Error).message);
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  return (
+    <Dialog open={open} onOpenChange={setOpen}>
+      <DialogTrigger asChild>
+        <Button variant="outline" size="sm" className="h-8 text-xs">
+          <BadgeCheck className="mr-1 h-3 w-3" /> Verify
+        </Button>
+      </DialogTrigger>
+      <DialogContent className="sm:max-w-md">
+        <DialogHeader>
+          <DialogTitle>Submit a verified rate</DialogTitle>
+          <DialogDescription>
+            Help confirm or correct the {courierName} rate for {zone}.
+          </DialogDescription>
+        </DialogHeader>
+        <form onSubmit={onSubmit} className="space-y-3">
+          <div className="space-y-1.5">
+            <Label className="text-xs">Verified price (BDT)</Label>
+            <Input
+              type="number"
+              min="0"
+              value={submittedPrice}
+              onChange={(e) => setSubmittedPrice(e.target.value)}
+              placeholder={`Actual charge for ${userWeight}kg`}
+            />
+          </div>
+          <div className="space-y-1.5">
+            <Label className="text-xs">Evidence link (invoice / screenshot URL)</Label>
+            <Input
+              value={evidenceUrl}
+              onChange={(e) => setEvidenceUrl(e.target.value)}
+              placeholder="https://"
+              maxLength={500}
+            />
+          </div>
+          <div className="space-y-1.5">
+            <Label className="text-xs">Notes</Label>
+            <Textarea
+              value={notes}
+              onChange={(e) => setNotes(e.target.value)}
+              rows={2}
+              placeholder="Anything else worth noting"
+              maxLength={2000}
+            />
+          </div>
+          <div className="space-y-1.5">
+            <Label className="text-xs">Your contact (optional)</Label>
+            <Input
+              value={submitterContact}
+              onChange={(e) => setSubmitterContact(e.target.value)}
+              placeholder="Phone, email, or page name"
+              maxLength={200}
+            />
+          </div>
+          <DialogFooter>
+            <Button type="submit" disabled={submitting} className="w-full">
+              {submitting ? "Submitting…" : "Submit verification"}
             </Button>
           </DialogFooter>
         </form>

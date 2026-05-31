@@ -1,66 +1,97 @@
+## CourierWise — Verified Rates + Intelligence Layer
 
-# CourierWise — MVP Plan
+Large change. Migration-first, then engine + UI. Frontend reads everything from DB.
 
-A mobile-first web app that compares estimated parcel delivery costs across Pathao, REDX, Steadfast, and Delivery Tiger for Bangladesh f-commerce sellers.
+### 1. DB migration (`courier_rate_slabs` + new tables)
 
-## Scope
+Add columns to `courier_rate_slabs`:
+- `verification_status` text check in (`official`,`community_verified`,`estimated`,`outdated`,`disputed`) default `estimated`
+- `confidence_score` text check in (`high`,`medium`,`low`) default `low`
+- `source_type` text (`official_site`,`merchant_doc`,`community`,`admin_manual`)
+- `verified_by` text
+- `estimated_flag` boolean default true
+- `last_verified_at` timestamptz
+- `extra_kg_price` numeric default 0 — enables dynamic per-kg pricing beyond slab max
+- `min_charge` numeric default 0 — for Delivery Tiger min-charge model
 
-In: home, compare form, results, admin rate management, "report wrong rate" form, sample seed data, disclaimers.
-Out: auth, booking, tracking, live courier APIs, payments.
+Allow new zones: extend `Zone` to include `"Dhaka Suburbs"` and `"Outside Dhaka → Outside Dhaka"` (Pathao 4th zone). Keep `"Sub-Dhaka"` as alias of `"Dhaka Suburbs"` — migrate existing rows.
 
-## Storage
+New table `zone_mappings`:
+- `district` text, `normalized_zone` text, `courier_name` text nullable (courier-specific overrides)
+- Seed: Gazipur, Savar, Narayanganj, Keraniganj, Tongi → `Dhaka Suburbs`; Dhaka → `Inside Dhaka`; others → `Outside Dhaka`.
+- GRANTs + RLS public-read.
 
-Use Lovable Cloud (Supabase) so rates and reports persist and the admin page is actually useful. Two tables:
+New table `rate_verifications` (crowd-sourced):
+- `slab_id` uuid nullable, `courier_name`, `zone`, `weight`, `submitted_price`, `evidence_url`, `submitter_contact`, `status` (`pending`/`approved`/`rejected`/`merged`), `notes`, `created_at`
+- Public insert (validated), admin select/update.
 
-- `courier_rates` — id, courier_name, zone, base_weight_limit, base_price, extra_kg_price, cod_percent, cod_fixed_fee, estimated_delivery_time, notes, source_url, last_verified_date, active, created_at.
-- `rate_reports` — id, courier_name, issue, actual_amount, screenshot_note, created_at.
+### 2. Seed verified rates
 
-RLS: public read on `courier_rates` where `active = true`; public insert on `rate_reports`. Admin mutations on `courier_rates` go through a server function gated by a shared admin passphrase stored as a secret (no real auth, matches "protected-looking" requirement). Seed with sample rows for all 4 couriers × 3 zones.
+Wipe `courier_rate_slabs` and insert the verified May 2026 rates from the brief:
+- **Pathao** (official, high): 4 zones × slabs (0–0.5, 0.5–1, 1–2) + `extra_kg_price` 15/25 by zone. COD 0.5%/1%.
+- **REDX** (community_verified, medium): 3 zones × (0–1, 1–2, 2–3). COD 0/1%.
+- **Steadfast**: base slab (0–1) marked `official/high`; 1–2, 2–3 slabs marked `estimated/low` with `extra_kg_price` 20. COD 1%.
+- **Delivery Tiger** (official/medium): base 0–1 with `min_charge` 75, `extra_kg_price` 20. COD flat 5 inside / max(1%,10) outside — model `cod_fixed_fee`=5 inside, =10 outside with `cod_percent`=0/1.
 
-## Routes (TanStack Start)
+Each row gets `source_url`, `last_verified_at = '2026-05-01'`.
 
-- `/` — landing: name, subtitle, description, "Compare Rates" CTA, disclaimer.
-- `/compare` — rate comparison form.
-- `/results` — results cards, sorted cheapest first, "Cheapest Option" badge, "Report wrong rate" button per card. Form inputs passed via search params so results are shareable/SSR-friendly.
-- `/admin` — passphrase gate (local state), then CRUD table for `courier_rates`.
+### 3. Pricing engine (`src/lib/courier.ts`)
 
-Each route gets its own `head()` metadata.
+Upgrade `rankSlabQuotes`:
+- Pick slab where weight falls in range OR weight > max of largest slab → use largest slab + `(weight - max) * extra_kg_price`.
+- `deliveryCharge = max(min_charge, slabPrice + overflowKgCharge)`.
+- COD unchanged (`max(cod_fixed_fee, codAmount * cod_percent/100)`).
+- Return `confidence`, `verification_status`, `source_url`, `last_verified_at` in result for UI.
 
-## Pricing logic (shared util)
+### 4. UI
 
-For each active courier row matching the selected zone:
-```
-delivery = base_price
-extra = max(0, ceil(weight - base_weight_limit)) * extra_kg_price
-cod_fee = max(cod_fixed_fee, cod_amount * cod_percent / 100)
-total = delivery + extra + cod_fee
-```
-Sort ascending by `total`. Mark rank 1 as cheapest.
+**`/compare`**: add Pathao 4th zone option (`Outside Dhaka → Outside Dhaka`). Add helper text for suburbs (use zone_mappings list).
 
-## UI
+**`/results`**: each courier card shows badge:
+- `official` + `high` → green "Verified Official"
+- `community_verified` → amber "Community Verified"
+- `estimated` → gray "Estimated — verify before use"
+- Source link + "Last verified <date>"
+- Replace "all sample" banner with "Some rates are estimated — submit corrections" when any estimated slabs are present.
 
-shadcn cards, mobile-first, simple lucide icons (Truck, Package, MapPin, BadgeCheck). Sticky disclaimer banner: "Sample rates — verify before use." Clean neutral theme via tokens in `src/styles.css`.
+Add "Submit verification" form (separate from existing rate-report) that posts to `rate_verifications`.
 
-## Form fields
+**`/admin`**: 
+- Slab editor: add fields for verification_status, confidence_score, source_type, extra_kg_price, min_charge.
+- New "Verifications" tab listing `rate_verifications` with approve/reject/merge actions.
 
-Pickup city, destination city (dropdowns seeded with major BD cities), zone (Inside Dhaka / Sub-Dhaka / Outside Dhaka), weight (kg, number), COD amount (BDT, number), product type (optional text).
+### 5. Server functions
 
-## Report-wrong-rate
+- `slabs.functions.ts`: extend schema with new fields.
+- New `verifications.functions.ts`: `submitVerification` (public), `listVerifications` (admin), `updateVerificationStatus` (admin).
+- `rates.functions.ts`: unchanged (still owns `rate_reports`).
 
-Dialog opened from a result card, posts to `rate_reports` via a server function. Screenshot field is a placeholder note input only (no upload pipeline in MVP).
+### 6. Out of scope (explicit)
 
-## Build order
+- AI recommendation engine
+- Merchant analytics
+- Auto-scraping
+- Courier API integrations
+- Volumetric weight / fragile surcharges
 
-1. Enable Lovable Cloud, create tables + RLS + seed rates.
-2. Shared types + pricing util + city/zone constants.
-3. Landing `/` and design tokens.
-4. `/compare` form → navigates to `/results` with search params.
-5. `/results` querying rates, computing totals, ranking, report dialog.
-6. `/admin` passphrase gate + CRUD UI wired to server functions.
-7. QA on mobile viewport.
+These are documented in README as roadmap.
 
-## Technical notes
+### Acceptance
 
-- Server functions in `src/lib/rates.functions.ts` for list/create/update/delete + report submit; admin mutations check passphrase from request against `ADMIN_PASSPHRASE` secret.
-- Client uses TanStack Query (`ensureQueryData` in loaders, `useSuspenseQuery` in components).
-- All colors via semantic tokens in `src/styles.css`.
+- Old sample rates gone; DB has verified rates only.
+- Pathao 4 zones work, Delivery Tiger min-charge model works, Steadfast >1kg shows "Estimated" badge.
+- Results show verification badge + source link.
+- Admin can edit verification fields and review crowd submissions.
+- Zone mapping table queryable for suburb helper text.
+- All rates load from DB; no hardcoded rates in components.
+
+### Files touched
+
+- `supabase/migrations/<new>.sql` (one migration, schema + seed data merged into two calls — migration for schema, insert for data)
+- `src/lib/courier.ts` — engine + zones + types
+- `src/lib/slabs.functions.ts` — extended schema
+- `src/lib/verifications.functions.ts` — new
+- `src/routes/compare.tsx` — 4th zone, suburb helper
+- `src/routes/results.tsx` — confidence badges, source attribution, verification submit
+- `src/routes/admin.tsx` — extended slab editor + verifications tab
+- `README.md` — updated rate logic + roadmap
