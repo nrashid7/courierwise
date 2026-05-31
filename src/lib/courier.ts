@@ -33,13 +33,35 @@ export const CITIES = [
 ];
 
 export type VerificationStatus =
-  | "official"
-  | "community_verified"
-  | "estimated"
-  | "outdated"
-  | "disputed";
+  | "VERIFIED"
+  | "COMMUNITY_VERIFIED"
+  | "ESTIMATED"
+  | "OUTDATED"
+  | "DISPUTED";
 
-export type ConfidenceScore = "high" | "medium" | "low";
+/** Numeric confidence 0..1. */
+export type ConfidenceScore = number;
+
+export type CanonicalZone =
+  | "INSIDE_DHAKA"
+  | "SUBURBAN"
+  | "OUTSIDE_DHAKA"
+  | "INTER_DISTRICT";
+
+export const CANONICAL_ZONE_LABELS: Record<CanonicalZone, string> = {
+  INSIDE_DHAKA: "Inside Dhaka",
+  SUBURBAN: "Dhaka Suburbs",
+  OUTSIDE_DHAKA: "Outside Dhaka",
+  INTER_DISTRICT: "Outside Dhaka → Outside Dhaka",
+};
+
+export const VERIFICATION_STATUSES: VerificationStatus[] = [
+  "VERIFIED",
+  "COMMUNITY_VERIFIED",
+  "ESTIMATED",
+  "OUTDATED",
+  "DISPUTED",
+];
 
 export interface CourierRateSlab {
   id: string;
@@ -63,6 +85,7 @@ export interface CourierRateSlab {
   last_verified_date: string | null;
   last_verified_at: string | null;
   active: boolean;
+  canonical_zone: CanonicalZone | string;
 }
 
 export interface QuoteInput {
@@ -164,20 +187,21 @@ export function confidenceLabel(slab: CourierRateSlab): {
   label: string;
   tone: "success" | "warning" | "muted";
 } {
-  if (slab.verification_status === "official" && slab.confidence_score === "high") {
-    return { label: "Verified Official", tone: "success" };
+  const score = Number(slab.confidence_score) || 0;
+  if (slab.verification_status === "VERIFIED") {
+    return { label: "Verified", tone: "success" };
   }
-  if (slab.verification_status === "community_verified") {
+  if (slab.verification_status === "COMMUNITY_VERIFIED") {
     return { label: "Community Verified", tone: "warning" };
   }
-  if (slab.verification_status === "estimated" || slab.estimated_flag) {
+  if (slab.verification_status === "ESTIMATED" || slab.estimated_flag) {
     return { label: "Estimated", tone: "muted" };
   }
-  if (slab.verification_status === "outdated") {
+  if (slab.verification_status === "OUTDATED") {
     return { label: "Outdated", tone: "warning" };
   }
-  if (slab.verification_status === "disputed") {
+  if (slab.verification_status === "DISPUTED") {
     return { label: "Disputed", tone: "warning" };
   }
-  return { label: "Unverified", tone: "muted" };
+  return { label: score >= 0.5 ? "Likely accurate" : "Unverified", tone: "muted" };
 }

@@ -55,6 +55,24 @@ export const submitVerification = createServerFn({ method: "POST" })
     return rest;
   })
   .handler(async ({ data }) => {
+    const { getRequestHeader } = await import("@tanstack/react-start/server");
+    const ip =
+      getRequestHeader("cf-connecting-ip") ??
+      getRequestHeader("x-forwarded-for")?.split(",")[0]?.trim() ??
+      "unknown";
+    const since = new Date(Date.now() - 60 * 60 * 1000).toISOString();
+    const { count } = await supabaseAdmin
+      .from("submission_throttle_log")
+      .select("id", { count: "exact", head: true })
+      .eq("ip", ip)
+      .eq("kind", "verification")
+      .gte("created_at", since);
+    if ((count ?? 0) >= 5) {
+      throw new Error("Too many submissions from your network. Please try again later.");
+    }
+    await supabaseAdmin
+      .from("submission_throttle_log")
+      .insert({ ip, kind: "verification" });
     const { error } = await supabaseAdmin
       .from("rate_verifications")
       .insert({ ...data, status: "pending" });

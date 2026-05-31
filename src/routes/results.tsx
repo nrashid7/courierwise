@@ -88,7 +88,7 @@ function ResultsPage() {
     quotes.length > 0 &&
     quotes.some(
       (q) =>
-        q.slab.verification_status === "estimated" ||
+        q.slab.verification_status === "ESTIMATED" ||
         q.slab.estimated_flag ||
         q.overflow,
     );

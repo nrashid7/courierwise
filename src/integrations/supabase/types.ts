@@ -17,9 +17,10 @@ export type Database = {
       courier_rate_slabs: {
         Row: {
           active: boolean
+          canonical_zone: string
           cod_fixed_fee: number
           cod_percent: number
-          confidence_score: string
+          confidence_score: number
           courier_name: string
           created_at: string
           estimated_delivery_time: string | null
@@ -42,9 +43,10 @@ export type Database = {
         }
         Insert: {
           active?: boolean
+          canonical_zone: string
           cod_fixed_fee?: number
           cod_percent?: number
-          confidence_score?: string
+          confidence_score?: number
           courier_name: string
           created_at?: string
           estimated_delivery_time?: string | null
@@ -67,9 +69,10 @@ export type Database = {
         }
         Update: {
           active?: boolean
+          canonical_zone?: string
           cod_fixed_fee?: number
           cod_percent?: number
-          confidence_score?: string
+          confidence_score?: number
           courier_name?: string
           created_at?: string
           estimated_delivery_time?: string | null
@@ -227,6 +230,27 @@ export type Database = {
           submitter_contact?: string | null
           weight?: number | null
           zone?: string | null
+        }
+        Relationships: []
+      }
+      submission_throttle_log: {
+        Row: {
+          created_at: string
+          id: string
+          ip: string
+          kind: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          ip: string
+          kind: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          ip?: string
+          kind?: string
         }
         Relationships: []
       }

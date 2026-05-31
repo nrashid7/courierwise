@@ -24,7 +24,30 @@ import {
   DialogTrigger,
 } from "@/components/ui/dialog";
 import { Textarea } from "@/components/ui/textarea";
-import { COURIERS, ZONES, type CourierRateSlab } from "@/lib/courier";
+import {
+  COURIERS,
+  ZONES,
+  VERIFICATION_STATUSES,
+  CANONICAL_ZONE_LABELS,
+  type CanonicalZone,
+  type CourierRateSlab,
+  type VerificationStatus,
+} from "@/lib/courier";
+
+function zoneToCanonical(zone: string): CanonicalZone {
+  switch (zone) {
+    case "Inside Dhaka":
+      return "INSIDE_DHAKA";
+    case "Dhaka Suburbs":
+      return "SUBURBAN";
+    case "Outside Dhaka":
+      return "OUTSIDE_DHAKA";
+    case "Outside Dhaka → Outside Dhaka":
+      return "INTER_DISTRICT";
+    default:
+      return "INSIDE_DHAKA";
+  }
+}
 import {
   deleteSlab,
   listAllSlabs,
@@ -104,6 +127,8 @@ function AdminPanel({ passphrase, onLock }: { passphrase: string; onLock: () => 
   const list = useServerFn(listAllSlabs);
   const [courierFilter, setCourierFilter] = useState<string>("all");
   const [zoneFilter, setZoneFilter] = useState<string>("all");
+  const [statusFilter, setStatusFilter] = useState<string>("all");
+  const [estimatedOnly, setEstimatedOnly] = useState(false);
 
   const { data, isLoading, error } = useQuery({
     queryKey: ["admin_slabs"],
@@ -112,13 +137,15 @@ function AdminPanel({ passphrase, onLock }: { passphrase: string; onLock: () => 
   });
 
   const filtered = useMemo(() => {
-    const all = (data?.slabs ?? []) as CourierRateSlab[];
+    const all = (data?.slabs ?? []) as unknown as CourierRateSlab[];
     return all.filter((s) => {
       if (courierFilter !== "all" && s.courier_name !== courierFilter) return false;
       if (zoneFilter !== "all" && s.zone !== zoneFilter) return false;
+      if (statusFilter !== "all" && s.verification_status !== statusFilter) return false;
+      if (estimatedOnly && !s.estimated_flag) return false;
       return true;
     });
-  }, [data, courierFilter, zoneFilter]);
+  }, [data, courierFilter, zoneFilter, statusFilter, estimatedOnly]);
 
   if (error) {
     return (
@@ -149,7 +176,7 @@ function AdminPanel({ passphrase, onLock }: { passphrase: string; onLock: () => 
       </header>
 
       <main className="mx-auto max-w-4xl px-4 pb-16">
-        <div className="mb-3 grid gap-2 sm:grid-cols-2">
+        <div className="mb-3 grid gap-2 sm:grid-cols-2 lg:grid-cols-4">
           <div>
             <Label className="text-xs">Courier</Label>
             <Select value={courierFilter} onValueChange={setCourierFilter}>
@@ -169,6 +196,22 @@ function AdminPanel({ passphrase, onLock }: { passphrase: string; onLock: () => 
                 {ZONES.map((z) => <SelectItem key={z} value={z}>{z}</SelectItem>)}
               </SelectContent>
             </Select>
+          </div>
+          <div>
+            <Label className="text-xs">Verification</Label>
+            <Select value={statusFilter} onValueChange={setStatusFilter}>
+              <SelectTrigger><SelectValue /></SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All statuses</SelectItem>
+                {VERIFICATION_STATUSES.map((s) => (
+                  <SelectItem key={s} value={s}>{s.replace("_", " ")}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+          <div className="flex items-end gap-2 pb-1">
+            <Switch checked={estimatedOnly} onCheckedChange={setEstimatedOnly} id="est-only" />
+            <Label htmlFor="est-only" className="text-xs">Estimated only</Label>
           </div>
         </div>
 
@@ -388,10 +431,12 @@ function SlabDialog({
   const [notes, setNotes] = useState(initial?.notes ?? "");
   const [sourceUrl, setSourceUrl] = useState(initial?.source_url ?? "");
   const [sourceType, setSourceType] = useState(initial?.source_type ?? "official_site");
-  const [verificationStatus, setVerificationStatus] = useState(
-    initial?.verification_status ?? "estimated",
+  const [verificationStatus, setVerificationStatus] = useState<VerificationStatus>(
+    (initial?.verification_status as VerificationStatus) ?? "ESTIMATED",
   );
-  const [confidence, setConfidence] = useState(initial?.confidence_score ?? "low");
+  const [confidence, setConfidence] = useState<string>(
+    String(initial?.confidence_score ?? 0.35),
+  );
   const [estimatedFlag, setEstimatedFlag] = useState(initial?.estimated_flag ?? true);
   const [verifiedBy, setVerifiedBy] = useState(initial?.verified_by ?? "");
   const [verified, setVerified] = useState(
@@ -409,6 +454,7 @@ function SlabDialog({
           slab: {
             courier_name: courier,
             zone,
+            canonical_zone: zoneToCanonical(zone),
             min_weight: Number(minWeight) || 0,
             max_weight: Number(maxWeight) || 0,
             price: Number(price) || 0,
@@ -421,7 +467,7 @@ function SlabDialog({
             source_url: sourceUrl || null,
             source_type: sourceType || null,
             verification_status: verificationStatus,
-            confidence_score: confidence,
+            confidence_score: Math.max(0, Math.min(1, Number(confidence) || 0)),
             estimated_flag: estimatedFlag,
             verified_by: verifiedBy || null,
             last_verified_date: verified || null,
@@ -490,26 +536,24 @@ function SlabDialog({
               <Input value={eta} onChange={(e) => setEta(e.target.value)} />
             </Field>
             <Field label="Verification status">
-              <Select value={verificationStatus} onValueChange={(v) => setVerificationStatus(v as typeof verificationStatus)}>
+              <Select value={verificationStatus} onValueChange={(v) => setVerificationStatus(v as VerificationStatus)}>
                 <SelectTrigger><SelectValue /></SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="official">Official</SelectItem>
-                  <SelectItem value="community_verified">Community verified</SelectItem>
-                  <SelectItem value="estimated">Estimated</SelectItem>
-                  <SelectItem value="outdated">Outdated</SelectItem>
-                  <SelectItem value="disputed">Disputed</SelectItem>
+                  {VERIFICATION_STATUSES.map((s) => (
+                    <SelectItem key={s} value={s}>{s.replace("_", " ")}</SelectItem>
+                  ))}
                 </SelectContent>
               </Select>
             </Field>
-            <Field label="Confidence">
-              <Select value={confidence} onValueChange={(v) => setConfidence(v as typeof confidence)}>
-                <SelectTrigger><SelectValue /></SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="high">High</SelectItem>
-                  <SelectItem value="medium">Medium</SelectItem>
-                  <SelectItem value="low">Low</SelectItem>
-                </SelectContent>
-              </Select>
+            <Field label="Confidence (0–1)">
+              <Input
+                type="number"
+                step="0.05"
+                min="0"
+                max="1"
+                value={confidence}
+                onChange={(e) => setConfidence(e.target.value)}
+              />
             </Field>
             <Field label="Source type">
               <Select value={sourceType ?? "official_site"} onValueChange={setSourceType}>

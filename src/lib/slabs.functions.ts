@@ -15,6 +15,9 @@ function checkAdmin(passphrase: string) {
 const slabSchema = z.object({
   courier_name: z.string().min(1).max(100),
   zone: z.string().min(1).max(100),
+  canonical_zone: z
+    .enum(["INSIDE_DHAKA", "SUBURBAN", "OUTSIDE_DHAKA", "INTER_DISTRICT"])
+    .default("INSIDE_DHAKA"),
   min_weight: z.number().min(0).max(1000),
   max_weight: z.number().min(0).max(1000),
   price: z.number().min(0).max(1000000),
@@ -27,9 +30,9 @@ const slabSchema = z.object({
   source_url: z.string().max(500).nullable().optional(),
   source_type: z.string().max(50).nullable().optional(),
   verification_status: z
-    .enum(["official", "community_verified", "estimated", "outdated", "disputed"])
-    .default("estimated"),
-  confidence_score: z.enum(["high", "medium", "low"]).default("low"),
+    .enum(["VERIFIED", "COMMUNITY_VERIFIED", "ESTIMATED", "OUTDATED", "DISPUTED"])
+    .default("ESTIMATED"),
+  confidence_score: z.number().min(0).max(1).default(0.35),
   estimated_flag: z.boolean().default(true),
   verified_by: z.string().max(200).nullable().optional(),
   last_verified_date: z.string().nullable().optional(),
