@@ -455,12 +455,14 @@ function ReportDialog({
 function VerifyDialog({
   slabId,
   courierName,
-  zone,
+  canonicalZone,
+  zoneLabel,
   userWeight,
 }: {
   slabId: string;
   courierName: string;
-  zone: string;
+  canonicalZone: CanonicalZone;
+  zoneLabel: string;
   userWeight: number;
 }) {
   const [open, setOpen] = useState(false);
@@ -497,7 +499,7 @@ function VerifyDialog({
         data: {
           slab_id: slabId,
           courier_name: courierName,
-          zone,
+          zone: canonicalZone,
           weight: userWeight,
           submitted_price: submittedPrice ? Number(submittedPrice) : null,
           evidence_url: trimmedUrl || null,
@@ -505,6 +507,7 @@ function VerifyDialog({
           notes: notes.trim() || null,
           website,
         },
+
       });
       toast.success("Thanks — verification submitted for review.");
       setOpen(false);
