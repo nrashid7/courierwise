@@ -113,9 +113,12 @@ function ComparePage() {
               </SelectContent>
             </Select>
             <p className="text-[11px] text-muted-foreground">
-              Not sure? Choose <span className="font-medium">Inside Dhaka</span> only for
-              Dhaka city delivery. Use <span className="font-medium">Outside Dhaka</span> for
-              other districts.
+              <span className="font-medium">Inside Dhaka</span>: Dhaka city only.{" "}
+              <span className="font-medium">Dhaka Suburbs</span>: Gazipur, Savar,
+              Narayanganj, Keraniganj, Tongi.{" "}
+              <span className="font-medium">Outside Dhaka</span>: other districts (pickup in Dhaka).{" "}
+              <span className="font-medium">Outside Dhaka → Outside Dhaka</span>:
+              city-to-city outside Dhaka (Pathao only).
             </p>
           </Field>
 
