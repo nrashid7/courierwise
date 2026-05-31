@@ -486,6 +486,17 @@ function VerifyDialog({
           </DialogDescription>
         </DialogHeader>
         <form onSubmit={onSubmit} className="space-y-3">
+          <div aria-hidden="true" style={{ position: "absolute", left: "-9999px", height: 0, overflow: "hidden" }}>
+            <Label htmlFor="vd-website">Website</Label>
+            <Input
+              id="vd-website"
+              type="text"
+              tabIndex={-1}
+              autoComplete="off"
+              value={website}
+              onChange={(e) => setWebsite(e.target.value)}
+            />
+          </div>
           <div className="space-y-1.5">
             <Label className="text-xs">Verified price (BDT)</Label>
             <Input
