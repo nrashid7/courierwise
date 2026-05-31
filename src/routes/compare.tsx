@@ -252,10 +252,20 @@ function FormSection({
   );
 }
 
-function Field({ label, children }: { label: string; children: React.ReactNode }) {
+function Field({
+  id,
+  label,
+  children,
+}: {
+  id?: string;
+  label: string;
+  children: React.ReactNode;
+}) {
   return (
     <div className="space-y-2">
-      <Label className="text-sm font-medium">{label}</Label>
+      <Label htmlFor={id} className="text-sm font-medium">
+        {label}
+      </Label>
       {children}
     </div>
   );
