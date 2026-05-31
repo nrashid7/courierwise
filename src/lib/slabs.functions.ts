@@ -27,7 +27,14 @@ const slabSchema = z.object({
   min_charge: z.number().min(0).max(100000).default(0),
   estimated_delivery_time: z.string().max(100).nullable().optional(),
   notes: z.string().max(2000).nullable().optional(),
-  source_url: z.string().max(500).nullable().optional(),
+  source_url: z
+    .string()
+    .max(500)
+    .refine((v) => /^https:\/\//i.test(v), {
+      message: "Source URL must start with https://",
+    })
+    .nullable()
+    .optional(),
   source_type: z.string().max(50).nullable().optional(),
   verification_status: z
     .enum(["VERIFIED", "COMMUNITY_VERIFIED", "ESTIMATED", "OUTDATED", "DISPUTED"])
@@ -73,7 +80,10 @@ export const upsertSlab = createServerFn({ method: "POST" })
       .select("id, min_weight, max_weight")
       .eq("courier_name", data.slab.courier_name)
       .eq("zone", data.slab.zone);
-    if (exErr) throw new Error(exErr.message);
+    if (exErr) {
+      console.error("[slabs.upsertSlab] overlap check error:", exErr);
+      throw new Error("A database error occurred. Please try again.");
+    }
 
     const overlaps = (existing ?? []).some((row) => {
       if (data.id && row.id === data.id) return false;
