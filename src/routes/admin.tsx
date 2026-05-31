@@ -579,7 +579,14 @@ function VerificationsSection({ passphrase }: { passphrase: string }) {
   const mut = useMutation({
     mutationFn: (vars: { id: string; status: RateVerification["status"] }) =>
       updateStatus({ data: { passphrase, ...vars } }),
-    onSuccess: () => qc.invalidateQueries({ queryKey: ["admin_verifications"] }),
+    onSuccess: (_data, vars) => {
+      qc.invalidateQueries({ queryKey: ["admin_verifications"] });
+      if (vars.status === "merged") {
+        toast.message("Status changed to merged. Update the actual slab manually if needed.");
+      } else {
+        toast.success(`Status updated to ${vars.status}.`);
+      }
+    },
     onError: (e: Error) => toast.error(e.message),
   });
 

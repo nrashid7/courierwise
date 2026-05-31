@@ -24,17 +24,36 @@ export interface RateVerification {
 
 const submitSchema = z.object({
   slab_id: z.string().uuid().nullable().optional(),
-  courier_name: z.string().min(1).max(100),
-  zone: z.string().max(100).nullable().optional(),
-  weight: z.number().min(0).max(1000).nullable().optional(),
-  submitted_price: z.number().min(0).max(1000000).nullable().optional(),
-  evidence_url: z.string().max(500).nullable().optional(),
-  submitter_contact: z.string().max(200).nullable().optional(),
-  notes: z.string().max(2000).nullable().optional(),
+  courier_name: z.string().min(1, "Courier name is required").max(100, "Courier name is too long"),
+  zone: z.string().max(100, "Zone is too long").nullable().optional(),
+  weight: z.number().min(0).max(1000, "Weight must be 1000 kg or less").nullable().optional(),
+  submitted_price: z
+    .number()
+    .min(0, "Price cannot be negative")
+    .max(1000000, "Price is too large")
+    .nullable()
+    .optional(),
+  evidence_url: z
+    .string()
+    .max(500, "Evidence URL is too long")
+    .url("Evidence link must be a valid URL (https://…)")
+    .nullable()
+    .optional(),
+  submitter_contact: z.string().max(200, "Contact is too long").nullable().optional(),
+  notes: z.string().max(2000, "Notes must be 2000 characters or fewer").nullable().optional(),
+  website: z.string().max(0, "Spam detected").optional(),
 });
 
 export const submitVerification = createServerFn({ method: "POST" })
-  .inputValidator((input: unknown) => submitSchema.parse(input))
+  .inputValidator((input: unknown) => {
+    const parsed = submitSchema.safeParse(input);
+    if (!parsed.success) {
+      const msg = parsed.error.issues[0]?.message ?? "Invalid submission";
+      throw new Error(msg);
+    }
+    const { website: _hp, ...rest } = parsed.data;
+    return rest;
+  })
   .handler(async ({ data }) => {
     const { error } = await supabaseAdmin
       .from("rate_verifications")
