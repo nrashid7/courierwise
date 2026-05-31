@@ -816,8 +816,9 @@ function VerifyDialog({
             />
           </div>
           <div className="space-y-1.5">
-            <Label className="text-xs">Verified price (BDT)</Label>
+            <Label htmlFor="vd-price" className="text-xs">Verified price (BDT)</Label>
             <Input
+              id="vd-price"
               type="number"
               min="0"
               value={submittedPrice}
@@ -826,8 +827,9 @@ function VerifyDialog({
             />
           </div>
           <div className="space-y-1.5">
-            <Label className="text-xs">Evidence link (invoice / screenshot URL)</Label>
+            <Label htmlFor="vd-evidence" className="text-xs">Evidence link (invoice / screenshot URL)</Label>
             <Input
+              id="vd-evidence"
               value={evidenceUrl}
               onChange={(e) => setEvidenceUrl(e.target.value)}
               placeholder="https://"
@@ -835,8 +837,9 @@ function VerifyDialog({
             />
           </div>
           <div className="space-y-1.5">
-            <Label className="text-xs">Notes</Label>
+            <Label htmlFor="vd-notes" className="text-xs">Notes</Label>
             <Textarea
+              id="vd-notes"
               value={notes}
               onChange={(e) => setNotes(e.target.value)}
               rows={2}
@@ -845,8 +848,9 @@ function VerifyDialog({
             />
           </div>
           <div className="space-y-1.5">
-            <Label className="text-xs">Your contact (optional)</Label>
+            <Label htmlFor="vd-contact" className="text-xs">Your contact (optional)</Label>
             <Input
+              id="vd-contact"
               value={submitterContact}
               onChange={(e) => setSubmitterContact(e.target.value)}
               placeholder="Phone, email, or page name"
