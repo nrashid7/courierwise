@@ -4,4 +4,4 @@ Allow: /compare
 Allow: /results
 Disallow: /admin
 
-Sitemap: https://courierwise.com/sitemap.xml
+Sitemap: https://courierwise.lovable.app/sitemap.xml
