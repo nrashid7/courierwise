@@ -99,3 +99,7 @@ User-reported corrections land in `rate_reports`.
 - [ ] Mobile QA: `/`, `/compare`, `/results`, `/admin` on 360px / 414px widths
 - [ ] Confirm `.env` is gitignored and no real keys are committed
 - [ ] Confirm all admin mutations go through server functions (service-role only)
+
+## Security note
+
+If credentials were ever committed historically, rotate them immediately even after removal. Removing a file from the working tree does not purge it from prior Git history — assume any value that ever appeared in a committed `.env` is compromised and must be rotated at the source (Supabase, third-party providers, admin passphrase, etc.).
