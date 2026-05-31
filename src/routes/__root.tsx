@@ -74,27 +74,37 @@ function ErrorComponent({ error, reset }: { error: Error; reset: () => void }) {
 }
 
 export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()({
-  head: () => ({
-    meta: [
-      { charSet: "utf-8" },
-      { name: "viewport", content: "width=device-width, initial-scale=1" },
-      { title: "CourierWise — Compare Bangladesh courier rates" },
-      { name: "description", content: "Compare Pathao, REDX, Steadfast and Delivery Tiger courier rates before booking." },
-      { name: "author", content: "CourierWise" },
-      { property: "og:title", content: "CourierWise — Compare Bangladesh courier rates" },
-      { property: "og:description", content: "Compare Pathao, REDX, Steadfast and Delivery Tiger courier rates before booking." },
-      { property: "og:type", content: "website" },
-      { name: "twitter:card", content: "summary" },
-      { name: "twitter:title", content: "CourierWise — Compare Bangladesh courier rates" },
-      { name: "twitter:description", content: "Compare Pathao, REDX, Steadfast and Delivery Tiger courier rates before booking." },
-    ],
-    links: [
-      {
-        rel: "stylesheet",
-        href: appCss,
-      },
-    ],
-  }),
+  head: () => {
+    const title = "CourierWise — Compare Bangladesh courier rates";
+    const description =
+      "Compare Pathao, REDX, Steadfast, and Delivery Tiger delivery costs instantly for Bangladesh e-commerce and f-commerce sellers.";
+    const siteUrl = "https://courierwise.com";
+    const ogImage = `${siteUrl}/og-image.png`;
+    return {
+      meta: [
+        { charSet: "utf-8" },
+        { name: "viewport", content: "width=device-width, initial-scale=1" },
+        { title },
+        { name: "description", content: description },
+        { name: "author", content: "CourierWise" },
+        { property: "og:title", content: title },
+        { property: "og:description", content: description },
+        { property: "og:type", content: "website" },
+        { property: "og:url", content: siteUrl },
+        { property: "og:site_name", content: "CourierWise" },
+        { property: "og:image", content: ogImage },
+        { name: "twitter:card", content: "summary_large_image" },
+        { name: "twitter:title", content: title },
+        { name: "twitter:description", content: description },
+        { name: "twitter:image", content: ogImage },
+      ],
+      links: [
+        { rel: "stylesheet", href: appCss },
+        { rel: "canonical", href: siteUrl },
+      ],
+    };
+  },
+
   shellComponent: RootShell,
   component: RootComponent,
   notFoundComponent: NotFoundComponent,
