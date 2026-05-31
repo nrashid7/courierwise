@@ -50,10 +50,10 @@ function getFreshness(
   const days = Math.floor((Date.now() - verified.getTime()) / 86_400_000);
   const monthDay = verified.toLocaleDateString("en-US", { month: "short", day: "numeric" });
   const monthYear = verified.toLocaleDateString("en-US", { month: "short", year: "numeric" });
-  if (days <= 7) return { label: "🟢 Verified this week", tone: "fresh" };
+  if (days <= 7) return { label: "Verified this week", tone: "fresh" };
   if (days <= 30) return { label: `Verified ${monthDay}`, tone: "recent" };
-  if (days <= 90) return { label: `🟡 Verified ${monthYear}`, tone: "stale" };
-  return { label: "🔴 Confirm before booking", tone: "old" };
+  if (days <= 90) return { label: `Verified ${monthYear}`, tone: "stale" };
+  return { label: "Confirm before booking", tone: "old" };
 }
 
 const searchSchema = z
@@ -186,93 +186,110 @@ function ResultsPage() {
   };
 
   return (
-    <div className="min-h-screen bg-background">
-      <header className="mx-auto flex max-w-2xl items-center gap-2 px-4 py-4">
+    <div className="min-h-dvh bg-background">
+      <header className="mx-auto flex max-w-3xl items-center gap-3 px-4 py-4 sm:px-6">
         <Link to="/compare">
-          <Button variant="ghost" size="icon">
-            <ArrowLeft className="h-5 w-5" />
+          <Button variant="ghost" size="icon" aria-label="Back to compare form">
+            <ArrowLeft className="h-5 w-5" aria-hidden="true" />
           </Button>
         </Link>
-        <h1 className="text-lg font-semibold">Comparison results</h1>
+        <div>
+          <p className="text-sm text-muted-foreground">CourierWise</p>
+          <h1 className="text-lg font-semibold tracking-tight">Comparison results</h1>
+        </div>
       </header>
 
-      <div className="sticky top-0 z-20 border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/80">
-        <div className="mx-auto flex max-w-2xl items-center justify-center gap-1 px-4 py-2">
-          <div className="inline-flex rounded-full border bg-muted p-0.5 text-xs font-medium">
-            <button
-              type="button"
-              onClick={() => setCodMode("cod")}
-              className={`rounded-full px-3 py-1 transition ${
-                codMode === "cod"
-                  ? "bg-background text-foreground shadow-sm"
-                  : "text-muted-foreground"
-              }`}
-              aria-pressed={codMode === "cod"}
-            >
-              With COD
-            </button>
-            <button
-              type="button"
-              onClick={() => setCodMode("prepaid")}
-              className={`rounded-full px-3 py-1 transition ${
-                codMode === "prepaid"
-                  ? "bg-background text-foreground shadow-sm"
-                  : "text-muted-foreground"
-              }`}
-              aria-pressed={codMode === "prepaid"}
-            >
-              Prepaid
-            </button>
-          </div>
-        </div>
-      </div>
+      <main className="mx-auto max-w-3xl px-4 pb-16 sm:px-6">
+        <section className="rounded-2xl border bg-card p-4 shadow-sm sm:p-5">
+          <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+            <div>
+              <p className="text-xs font-semibold uppercase text-primary">Quote summary</p>
+              <h2 className="mt-1 text-2xl font-bold tracking-tight">
+                {quotes.length > 0
+                  ? `${quotes.length} courier options found`
+                  : "Checking available rates"}
+              </h2>
+              <div className="mt-3 flex flex-wrap gap-2 text-xs text-muted-foreground">
+                <SummaryChip label="Route" value={`${search.pickup} to ${search.destination}`} />
+                <SummaryChip label="Zone" value={zoneLabel} />
+                <SummaryChip label="Weight" value={`${search.weight} kg`} />
+                <SummaryChip
+                  label="Payment"
+                  value={codMode === "prepaid" ? "Prepaid" : `COD ৳${search.cod}`}
+                />
+              </div>
+            </div>
 
-      <main className="mx-auto max-w-2xl px-4 pb-16 pt-3">
-        <div className="rounded-xl border bg-card p-3 text-xs text-muted-foreground">
-          <div className="flex flex-wrap gap-x-4 gap-y-1">
-            <span><span className="text-foreground font-medium">Zone:</span> {zoneLabel}</span>
-            <span><span className="text-foreground font-medium">Weight:</span> {search.weight} kg</span>
-            <span>
-              <span className="text-foreground font-medium">COD:</span>{" "}
-              {codMode === "prepaid" ? "Prepaid (no COD)" : `৳${search.cod}`}
-            </span>
-            <span><span className="text-foreground font-medium">Route:</span> {search.pickup} → {search.destination}</span>
+            <div className="inline-flex w-full rounded-xl border bg-muted p-1 text-sm font-medium sm:w-auto">
+              <button
+                type="button"
+                onClick={() => setCodMode("cod")}
+                className={`h-9 flex-1 rounded-lg px-3 transition sm:flex-none ${
+                  codMode === "cod"
+                    ? "bg-background text-foreground shadow-sm"
+                    : "text-muted-foreground"
+                }`}
+                aria-pressed={codMode === "cod"}
+              >
+                With COD
+              </button>
+              <button
+                type="button"
+                onClick={() => setCodMode("prepaid")}
+                className={`h-9 flex-1 rounded-lg px-3 transition sm:flex-none ${
+                  codMode === "prepaid"
+                    ? "bg-background text-foreground shadow-sm"
+                    : "text-muted-foreground"
+                }`}
+                aria-pressed={codMode === "prepaid"}
+              >
+                Prepaid
+              </button>
+            </div>
           </div>
-        </div>
+        </section>
 
         <p className="mt-3 text-xs text-muted-foreground">
           Rates are based on publicly available courier pricing (verified May 2026).
-          Final charges may vary by parcel size, remote area surcharges, and courier promotions.
+          Final charges may vary by parcel size, remote area surcharges, and courier
+          promotions.
         </p>
 
         {hasEstimated && (
           <div
             role="alert"
-            className="mt-3 flex items-start gap-2 rounded-lg border border-warning/40 bg-warning/10 px-3 py-2 text-xs font-medium text-warning-foreground"
+            className="mt-3 flex items-start gap-2 rounded-xl border border-warning/40 bg-warning/10 px-3 py-2 text-xs font-medium text-warning-foreground"
           >
-            <Info className="mt-0.5 h-4 w-4 shrink-0 text-warning" />
+            <Info className="mt-0.5 h-4 w-4 shrink-0 text-warning" aria-hidden="true" />
             <p>
-              Some rates below are <strong>estimated</strong> — couriers do not publish full pricing
-              for every weight slab. Verify with your courier before booking, and{" "}
-              <strong>submit a correction</strong> using the button on any card to help us improve accuracy.
+              Some rates below are <strong>estimated</strong> — couriers do not publish
+              full pricing for every weight slab. Verify with your courier before
+              booking, and <strong>submit a correction</strong> using the button on
+              any card to help us improve accuracy.
             </p>
           </div>
         )}
 
         {weightOverLimit && (
-          <div className="mt-3 flex items-start gap-2 rounded-lg border border-warning/30 bg-warning/10 px-3 py-2 text-xs text-warning-foreground">
-            <Info className="mt-0.5 h-4 w-4 shrink-0 text-warning" />
+          <div className="mt-3 flex items-start gap-2 rounded-xl border border-warning/30 bg-warning/10 px-3 py-2 text-xs text-warning-foreground">
+            <Info className="mt-0.5 h-4 w-4 shrink-0 text-warning" aria-hidden="true" />
             <p>Rates above 6kg may vary by courier. Verify before booking.</p>
           </div>
         )}
 
-        <div className="mt-3 flex flex-wrap justify-end gap-2">
-          <Button variant="outline" size="sm" onClick={handleCopyWhatsApp} disabled={quotes.length === 0}>
-            <MessageCircle className="mr-2 h-4 w-4" />
+        <div className="mt-4 flex flex-col gap-2 sm:flex-row sm:justify-end">
+          <Button
+            variant="outline"
+            size="sm"
+            className="h-10"
+            onClick={handleCopyWhatsApp}
+            disabled={quotes.length === 0}
+          >
+            <MessageCircle className="h-4 w-4" aria-hidden="true" />
             Copy WhatsApp summary
           </Button>
-          <Button variant="outline" size="sm" onClick={handleCopyLink}>
-            <Copy className="mr-2 h-4 w-4" />
+          <Button variant="outline" size="sm" className="h-10" onClick={handleCopyLink}>
+            <Copy className="h-4 w-4" aria-hidden="true" />
             Copy quote link
           </Button>
         </div>
@@ -280,10 +297,7 @@ function ResultsPage() {
         {isLoading && (
           <div className="mt-4 space-y-3" aria-label="Loading rates">
             {[0, 1, 2].map((i) => (
-              <div
-                key={i}
-                className="animate-pulse rounded-xl border bg-card p-4"
-              >
+              <div key={i} className="animate-pulse rounded-2xl border bg-card p-4">
                 <div className="flex items-center justify-between">
                   <div className="h-4 w-32 rounded bg-muted" />
                   <div className="h-6 w-20 rounded bg-muted" />
@@ -313,9 +327,9 @@ function ResultsPage() {
             />
           ))}
           {!isLoading && quotes.length === 0 && (
-            <div className="rounded-xl border bg-card p-6 text-center">
+            <div className="rounded-2xl border bg-card p-6 text-center">
               <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-muted">
-                <PackageOpen className="h-6 w-6 text-muted-foreground" />
+                <PackageOpen className="h-6 w-6 text-muted-foreground" aria-hidden="true" />
               </div>
               <h3 className="mt-3 text-base font-semibold">No rate available yet</h3>
               <p className="mt-1 text-sm text-muted-foreground">
@@ -325,8 +339,8 @@ function ResultsPage() {
                 <Button size="sm">Try different details</Button>
               </Link>
               <p className="mt-3 text-xs text-muted-foreground">
-                Spotted a missing courier? Help other merchants by reporting it
-                from any quote card once rates appear.
+                Spotted a missing courier? Help other merchants by reporting it from
+                any quote card once rates appear.
               </p>
             </div>
           )}
@@ -339,6 +353,14 @@ function ResultsPage() {
         </div>
       </main>
     </div>
+  );
+}
+
+function SummaryChip({ label, value }: { label: string; value: string }) {
+  return (
+    <span className="rounded-full border bg-background px-3 py-1.5">
+      <span className="font-medium text-foreground">{label}:</span> {value}
+    </span>
   );
 }
 
@@ -368,59 +390,71 @@ function ResultCard({
 
   return (
     <div
-      className={`rounded-xl border bg-card p-4 ${cheapest ? "border-primary ring-1 ring-primary/30" : ""}`}
+      className={`rounded-2xl border bg-card p-4 shadow-sm transition ${
+        cheapest ? "border-primary shadow-primary/10 ring-2 ring-primary/15" : ""
+      }`}
     >
-      <div className="flex items-start justify-between gap-3">
+      <div className="flex items-start justify-between gap-4">
         <div className="min-w-0">
           <div className="flex flex-wrap items-center gap-2">
-            <span className="text-xs font-medium text-muted-foreground">#{rank}</span>
-            <h3 className="text-base font-semibold">{quote.courier_name}</h3>
+            <span className="rounded-full bg-secondary px-2.5 py-1 text-xs font-semibold text-secondary-foreground">
+              #{rank}
+            </span>
+            <h3 className="text-lg font-bold tracking-tight">{quote.courier_name}</h3>
             {cheapest && (
-              <span className="inline-flex items-center gap-1 rounded-full bg-primary px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-primary-foreground">
-                <BadgeCheck className="h-3 w-3" />
-                Cheapest
+              <span className="inline-flex items-center gap-1 rounded-full bg-primary px-2.5 py-1 text-[11px] font-bold uppercase text-primary-foreground">
+                <BadgeCheck className="h-3.5 w-3.5" aria-hidden="true" />
+                Best price
               </span>
             )}
             <span
-              className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide ${toneClasses}`}
-              title={`Verification: ${quote.slab.verification_status} · Confidence: ${quote.slab.confidence_score}`}
+              className={`inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-[11px] font-semibold ${toneClasses}`}
+              title={`Verification: ${quote.slab.verification_status} - Confidence: ${quote.slab.confidence_score}`}
             >
               {conf.label}
             </span>
           </div>
-          <p className="mt-0.5 text-xs text-muted-foreground">
-            {quote.weightRangeLabel}
-          </p>
-          {quote.slab.estimated_delivery_time && (
-            <p className="mt-0.5 flex items-center gap-1 text-xs text-muted-foreground">
-              <Clock className="h-3 w-3" />
-              {quote.slab.estimated_delivery_time}
-            </p>
-          )}
+          <div className="mt-2 flex flex-wrap gap-2 text-xs text-muted-foreground">
+            <span>{quote.weightRangeLabel}</span>
+            {quote.slab.estimated_delivery_time && (
+              <span className="inline-flex items-center gap-1">
+                <Clock className="h-3.5 w-3.5" aria-hidden="true" />
+                {quote.slab.estimated_delivery_time}
+              </span>
+            )}
+          </div>
         </div>
-        <div className="text-right">
-          <div className="text-xs text-muted-foreground">Total</div>
-          <div className="text-xl font-bold">৳{quote.total.toFixed(0)}</div>
+
+        <div className="shrink-0 text-right">
+          <div className="text-xs font-medium text-muted-foreground">Total</div>
+          <div className="text-2xl font-black tabular-nums">
+            ৳{quote.total.toFixed(0)}
+          </div>
         </div>
       </div>
 
-      <div className="mt-3 grid grid-cols-2 gap-2 text-xs">
+      <div className="mt-4 grid grid-cols-2 gap-2">
         <Stat label="Delivery" value={`৳${quote.deliveryCharge.toFixed(0)}`} />
         <Stat label="COD fee" value={`৳${quote.codFee.toFixed(0)}`} />
       </div>
 
       {quote.slab.notes && (
-        <p className="mt-3 text-xs text-muted-foreground">{quote.slab.notes}</p>
+        <p className="mt-3 rounded-lg bg-secondary px-3 py-2 text-xs leading-5 text-muted-foreground">
+          {quote.slab.notes}
+        </p>
       )}
 
       {quote.courier_name === "Delivery Tiger" && canonicalZone !== "INSIDE_DHAKA" && (
-        <p className="mt-2 text-[11px] text-muted-foreground">
+        <p className="mt-2 text-xs text-muted-foreground">
           Flat rate pricing across Bangladesh.
         </p>
       )}
 
       {(() => {
-        const freshness = getFreshness(quote.slab.last_verified_at, quote.slab.last_verified_date);
+        const freshness = getFreshness(
+          quote.slab.last_verified_at,
+          quote.slab.last_verified_date,
+        );
         if (!freshness) return null;
         const toneClass =
           freshness.tone === "fresh"
@@ -429,24 +463,29 @@ function ResultCard({
               ? "text-destructive"
               : "text-muted-foreground";
         return (
-          <p className={`mt-2 text-[11px] ${toneClass}`}>{freshness.label}</p>
+          <p
+            className={`mt-3 inline-flex items-center gap-1.5 text-xs font-medium ${toneClass}`}
+          >
+            <BadgeCheck className="h-3.5 w-3.5" aria-hidden="true" />
+            {freshness.label}
+          </p>
         );
       })()}
 
-      <div className="mt-3 flex items-center justify-between gap-2">
-        <div className="flex flex-col gap-0.5 text-[11px] text-muted-foreground">
+      <div className="mt-4 flex flex-col gap-3 border-t pt-3 sm:flex-row sm:items-center sm:justify-between">
+        <div className="text-xs text-muted-foreground">
           {quote.slab.source_url && (
             <a
               href={quote.slab.source_url}
               target="_blank"
               rel="noopener noreferrer"
-              className="inline-flex items-center gap-1 text-primary hover:underline"
+              className="inline-flex items-center gap-1 font-medium text-primary hover:underline"
             >
-              Source <ExternalLink className="h-3 w-3" />
+              View source <ExternalLink className="h-3.5 w-3.5" aria-hidden="true" />
             </a>
           )}
         </div>
-        <div className="flex gap-1">
+        <div className="flex flex-col gap-2 sm:flex-row">
           <VerifyDialog
             slabId={quote.slab.id}
             courierName={quote.courier_name}
@@ -469,9 +508,11 @@ function ResultCard({
 
 function Stat({ label, value }: { label: string; value: string }) {
   return (
-    <div className="rounded-lg bg-muted p-2 text-center">
-      <div className="text-[10px] uppercase tracking-wide text-muted-foreground">{label}</div>
-      <div className="mt-0.5 text-sm font-semibold">{value}</div>
+    <div className="rounded-xl bg-secondary p-3 text-center">
+      <div className="text-[11px] font-semibold uppercase text-muted-foreground">
+        {label}
+      </div>
+      <div className="mt-1 text-base font-bold tabular-nums">{value}</div>
     </div>
   );
 }
