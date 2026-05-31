@@ -1,6 +1,6 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
-import { ArrowLeft, BadgeCheck, Clock, Copy, ExternalLink, Flag, Info, PackageOpen } from "lucide-react";
+import { ArrowLeft, BadgeCheck, Clock, Copy, ExternalLink, Flag, Info, MessageCircle, PackageOpen } from "lucide-react";
 import { useEffect, useState } from "react";
 import { z } from "zod";
 import { trackEvent } from "@/lib/analytics";
