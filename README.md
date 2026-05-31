@@ -85,3 +85,17 @@ User-reported corrections land in `rate_reports`.
 - No image upload for "Report wrong rate" (note field only).
 - Admin gate is a shared passphrase, not per-user auth.
 - Analytics is a `console.log` placeholder — swap in a real SDK before launch.
+
+## Pre-launch checklist
+
+- [ ] Rotate the Supabase publishable key (Lovable Cloud → Project settings)
+- [ ] Set a strong `ADMIN_PASSPHRASE` secret in Lovable Cloud
+- [ ] Verify RLS policies:
+  - `courier_rate_slabs`: public SELECT (active only), no public writes
+  - `rate_reports` / `rate_verifications`: INSERT only, no public reads
+  - `submission_throttle_log`: `service_role` only
+- [ ] Drop a real Open Graph image at `public/og-image.png` (1200×630)
+- [ ] Update `public/sitemap.xml` and `public/robots.txt` if domain changes
+- [ ] Mobile QA: `/`, `/compare`, `/results`, `/admin` on 360px / 414px widths
+- [ ] Confirm `.env` is gitignored and no real keys are committed
+- [ ] Confirm all admin mutations go through server functions (service-role only)
