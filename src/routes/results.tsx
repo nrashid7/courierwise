@@ -142,7 +142,7 @@ function ResultsPage() {
       <main className="mx-auto max-w-2xl px-4 pb-16">
         <div className="rounded-xl border bg-card p-3 text-xs text-muted-foreground">
           <div className="flex flex-wrap gap-x-4 gap-y-1">
-            <span><span className="text-foreground font-medium">Zone:</span> {search.zone}</span>
+            <span><span className="text-foreground font-medium">Zone:</span> {zoneLabel}</span>
             <span><span className="text-foreground font-medium">Weight:</span> {search.weight} kg</span>
             <span><span className="text-foreground font-medium">COD:</span> ৳{search.cod}</span>
             <span><span className="text-foreground font-medium">Route:</span> {search.pickup} → {search.destination}</span>
