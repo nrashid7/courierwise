@@ -1,97 +1,69 @@
-## CourierWise — Verified Rates + Intelligence Layer
+# CourierWise — Canonical Rates + Trust Architecture
 
-Large change. Migration-first, then engine + UI. Frontend reads everything from DB.
+The current schema/code uses:
+- `verification_status` as lowercase enum (`official`, `community_verified`, `estimated`…)
+- `confidence_score` as TEXT (`high`/`medium`/`low`)
+- Zone strings stored as human-readable text ("Inside Dhaka", "Dhaka Suburbs", "Outside Dhaka", "Outside Dhaka → Outside Dhaka")
 
-### 1. DB migration (`courier_rate_slabs` + new tables)
+You're asking for uppercase enums, numeric confidence, canonical zone keys, rate limiting, admin filters, and a fresh seed. Below is the staged plan.
 
-Add columns to `courier_rate_slabs`:
-- `verification_status` text check in (`official`,`community_verified`,`estimated`,`outdated`,`disputed`) default `estimated`
-- `confidence_score` text check in (`high`,`medium`,`low`) default `low`
-- `source_type` text (`official_site`,`merchant_doc`,`community`,`admin_manual`)
-- `verified_by` text
-- `estimated_flag` boolean default true
-- `last_verified_at` timestamptz
-- `extra_kg_price` numeric default 0 — enables dynamic per-kg pricing beyond slab max
-- `min_charge` numeric default 0 — for Delivery Tiger min-charge model
+## 1. Migration (`<new>_canonical_rates.sql`)
 
-Allow new zones: extend `Zone` to include `"Dhaka Suburbs"` and `"Outside Dhaka → Outside Dhaka"` (Pathao 4th zone). Keep `"Sub-Dhaka"` as alias of `"Dhaka Suburbs"` — migrate existing rows.
+Schema changes:
+- Drop the lowercase CHECK on `verification_status`; add new CHECK for `VERIFIED`, `COMMUNITY_VERIFIED`, `ESTIMATED`, `OUTDATED`, `DISPUTED`.
+- Convert `confidence_score` TEXT → NUMERIC(3,2). Map existing `high→0.95`, `medium→0.7`, `low→0.35` during the type swap (USING clause).
+- Add `canonical_zone` TEXT to `courier_rate_slabs` with CHECK in (`INSIDE_DHAKA`, `SUBURBAN`, `OUTSIDE_DHAKA`, `INTER_DISTRICT`). Keep human `zone` column for UI labels.
+- Update `zone_mappings.normalized_zone` values to the new enum keys; backfill.
+- Add `verification_submissions_log` table (ip text, created_at) for IP throttling on `rate_verifications` + `rate_reports`. RLS: anon insert with rate-limit check via trigger (max 5 per IP per hour).
 
-New table `zone_mappings`:
-- `district` text, `normalized_zone` text, `courier_name` text nullable (courier-specific overrides)
-- Seed: Gazipur, Savar, Narayanganj, Keraniganj, Tongi → `Dhaka Suburbs`; Dhaka → `Inside Dhaka`; others → `Outside Dhaka`.
-- GRANTs + RLS public-read.
+Seed:
+- `DELETE FROM courier_rate_slabs;`
+- Re-insert verified May 2026 rates (same numbers as last migration) but with:
+  - `verification_status` in new uppercase casing per courier rule (Pathao=VERIFIED/0.95, REDX=COMMUNITY_VERIFIED/0.70, Steadfast 0–1kg=VERIFIED/0.95 & higher=ESTIMATED/0.35+estimated_flag, Delivery Tiger=COMMUNITY_VERIFIED/0.65).
+  - `canonical_zone` mapped from zone string.
+  - `notes` set to canonical strings ("Verified from official courier pricing", "Community verified by merchants", "Estimated from adjacent courier slabs").
+  - Real `source_url` per courier (pathao.com/courier, redx.com.bd, steadfast.com.bd, deliverytiger.com.bd).
+  - `last_verified_at = '2026-05-01'`.
 
-New table `rate_verifications` (crowd-sourced):
-- `slab_id` uuid nullable, `courier_name`, `zone`, `weight`, `submitted_price`, `evidence_url`, `submitter_contact`, `status` (`pending`/`approved`/`rejected`/`merged`), `notes`, `created_at`
-- Public insert (validated), admin select/update.
+## 2. Code changes
 
-### 2. Seed verified rates
+- `src/lib/courier.ts`:
+  - `ConfidenceScore` → `number` (0..1).
+  - `VerificationStatus` uppercase union.
+  - `confidenceLabel` rewritten: VERIFIED→"Verified", COMMUNITY_VERIFIED→"Community Verified", ESTIMATED or estimated_flag→"Estimated", and tone derived from `confidence_score` numeric.
+  - Add `CanonicalZone` type + `CANONICAL_ZONE_LABELS` map for display.
+  - Quote engine unchanged (already correct: overflow ceil, min_charge floor, COD-zero guard).
 
-Wipe `courier_rate_slabs` and insert the verified May 2026 rates from the brief:
-- **Pathao** (official, high): 4 zones × slabs (0–0.5, 0.5–1, 1–2) + `extra_kg_price` 15/25 by zone. COD 0.5%/1%.
-- **REDX** (community_verified, medium): 3 zones × (0–1, 1–2, 2–3). COD 0/1%.
-- **Steadfast**: base slab (0–1) marked `official/high`; 1–2, 2–3 slabs marked `estimated/low` with `extra_kg_price` 20. COD 1%.
-- **Delivery Tiger** (official/medium): base 0–1 with `min_charge` 75, `extra_kg_price` 20. COD flat 5 inside / max(1%,10) outside — model `cod_fixed_fee`=5 inside, =10 outside with `cod_percent`=0/1.
+- `src/lib/slabs.functions.ts`: update Zod schema (`confidence_score: z.number().min(0).max(1)`, uppercase enum, add `canonical_zone` field).
 
-Each row gets `source_url`, `last_verified_at = '2026-05-01'`.
+- `src/lib/verifications.functions.ts` + `src/lib/reports.functions.ts`: insert into `verification_submissions_log` and check count(ip, last hour) ≤ 5; throw "Too many submissions, try again later" otherwise. Keep honeypot.
 
-### 3. Pricing engine (`src/lib/courier.ts`)
+- `src/routes/results.tsx`:
+  - Update badge tones to read numeric confidence.
+  - Show "Last verified <date>" line + clickable source URL.
+  - Add prominent "⚠ Estimated rate" warning chip when `estimated_flag`.
 
-Upgrade `rankSlabQuotes`:
-- Pick slab where weight falls in range OR weight > max of largest slab → use largest slab + `(weight - max) * extra_kg_price`.
-- `deliveryCharge = max(min_charge, slabPrice + overflowKgCharge)`.
-- COD unchanged (`max(cod_fixed_fee, codAmount * cod_percent/100)`).
-- Return `confidence`, `verification_status`, `source_url`, `last_verified_at` in result for UI.
+- `src/routes/admin.tsx`:
+  - Slab list filters: courier dropdown, verification status dropdown, "Show estimated only" toggle.
+  - Update slab form: numeric confidence input, uppercase status options, canonical_zone select.
 
-### 4. UI
+- `src/routes/compare.tsx`: remove the literal string "Sub-Dhaka" (already migrated to "Dhaka Suburbs" — verify and tidy helper text).
 
-**`/compare`**: add Pathao 4th zone option (`Outside Dhaka → Outside Dhaka`). Add helper text for suburbs (use zone_mappings list).
+- Grep & remove any remaining `"Sub-Dhaka"` literals.
 
-**`/results`**: each courier card shows badge:
-- `official` + `high` → green "Verified Official"
-- `community_verified` → amber "Community Verified"
-- `estimated` → gray "Estimated — verify before use"
-- Source link + "Last verified <date>"
-- Replace "all sample" banner with "Some rates are estimated — submit corrections" when any estimated slabs are present.
+## 3. Out of scope (explicit)
 
-Add "Submit verification" form (separate from existing rate-report) that posts to `rate_verifications`.
+- No new public API.
+- No change to pricing engine math (already correct per last fix).
+- No change to `rate_reports` schema beyond the rate-limit log.
 
-**`/admin`**: 
-- Slab editor: add fields for verification_status, confidence_score, source_type, extra_kg_price, min_charge.
-- New "Verifications" tab listing `rate_verifications` with approve/reject/merge actions.
+## 4. Acceptance
 
-### 5. Server functions
+- Migration runs cleanly; confidence_score is numeric; statuses are uppercase.
+- Results page shows verified/community/estimated badges with correct tones and source link.
+- Admin can filter slabs by courier/status/estimated.
+- Submitting >5 verifications/reports from same IP within 1h returns clear error.
+- Quote ranking still sorts by `total` ascending; COD=0 → codFee=0.
+- No remaining "Sub-Dhaka" or "Sample rate" strings in repo.
 
-- `slabs.functions.ts`: extend schema with new fields.
-- New `verifications.functions.ts`: `submitVerification` (public), `listVerifications` (admin), `updateVerificationStatus` (admin).
-- `rates.functions.ts`: unchanged (still owns `rate_reports`).
-
-### 6. Out of scope (explicit)
-
-- AI recommendation engine
-- Merchant analytics
-- Auto-scraping
-- Courier API integrations
-- Volumetric weight / fragile surcharges
-
-These are documented in README as roadmap.
-
-### Acceptance
-
-- Old sample rates gone; DB has verified rates only.
-- Pathao 4 zones work, Delivery Tiger min-charge model works, Steadfast >1kg shows "Estimated" badge.
-- Results show verification badge + source link.
-- Admin can edit verification fields and review crowd submissions.
-- Zone mapping table queryable for suburb helper text.
-- All rates load from DB; no hardcoded rates in components.
-
-### Files touched
-
-- `supabase/migrations/<new>.sql` (one migration, schema + seed data merged into two calls — migration for schema, insert for data)
-- `src/lib/courier.ts` — engine + zones + types
-- `src/lib/slabs.functions.ts` — extended schema
-- `src/lib/verifications.functions.ts` — new
-- `src/routes/compare.tsx` — 4th zone, suburb helper
-- `src/routes/results.tsx` — confidence badges, source attribution, verification submit
-- `src/routes/admin.tsx` — extended slab editor + verifications tab
-- `README.md` — updated rate logic + roadmap
+Confirm and I'll execute migration + code changes (large multi-file diff).
