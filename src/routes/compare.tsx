@@ -29,8 +29,19 @@ export const Route = createFileRoute("/compare")({
       { title: "Compare courier rates — CourierWise" },
       {
         name: "description",
-        content: "Enter parcel details to compare delivery costs across BD couriers.",
+        content:
+          "Enter pickup, destination, weight, and COD amount to compare estimated Pathao, REDX, Steadfast, and Delivery Tiger rates side by side.",
       },
+      { property: "og:title", content: "Compare courier rates — CourierWise" },
+      {
+        property: "og:description",
+        content:
+          "Enter pickup, destination, weight, and COD amount to compare Pathao, REDX, Steadfast, and Delivery Tiger rates.",
+      },
+      { property: "og:url", content: "https://courierwise.lovable.app/compare" },
+    ],
+    links: [
+      { rel: "canonical", href: "https://courierwise.lovable.app/compare" },
     ],
   }),
   component: ComparePage,
