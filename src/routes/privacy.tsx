@@ -1,4 +1,17 @@
 import { createFileRoute } from "@tanstack/react-router";
+import {
+  Database,
+  FileCheck2,
+  Lock,
+  Mail,
+  Network,
+  ShieldCheck,
+  ShieldOff,
+  Target,
+  UserX,
+  WalletCards,
+} from "lucide-react";
+import { Button } from "@/components/ui/button";
 import { MarketingHeader, MarketingFooter } from "@/components/MarketingHeader";
 
 export const Route = createFileRoute("/privacy")({
@@ -26,106 +39,133 @@ export const Route = createFileRoute("/privacy")({
 function PrivacyPage() {
   return (
     <div className="min-h-dvh bg-background">
-      <MarketingHeader maxWidth="max-w-3xl" />
-      <main className="mx-auto max-w-3xl px-4 pb-16 pt-6 sm:px-6 sm:pt-10">
-        <h1 className="text-3xl font-bold tracking-tight sm:text-4xl">Privacy Policy</h1>
-        <p className="mt-2 text-xs text-muted-foreground">Last updated: May 2026</p>
+      <MarketingHeader />
 
-        <div className="mt-5 space-y-4 leading-7 text-muted-foreground">
-          <p>
+      <main className="mx-auto max-w-5xl px-4 pb-16 pt-6 sm:px-6 sm:pt-10">
+        {/* Hero */}
+        <section className="max-w-3xl">
+          <div className="inline-flex items-center gap-2 rounded-full border bg-card px-3 py-1.5 text-xs font-semibold text-muted-foreground shadow-sm">
+            <ShieldCheck className="h-3.5 w-3.5 text-primary" aria-hidden="true" />
+            Privacy Policy
+          </div>
+          <h1 className="mt-5 text-4xl font-bold leading-tight tracking-tight text-foreground sm:text-5xl">
+            Lightweight, low-friction, and built to respect merchants.
+          </h1>
+          <p className="mt-4 text-base leading-7 text-muted-foreground sm:text-lg">
             CourierWise is designed to be lightweight and low-friction. You can
-            use core comparison features without creating an account.
+            use core comparison features without creating an account. This page
+            explains what information CourierWise may collect, why it is
+            collected, and how it is used.
           </p>
-          <p>
-            This page explains what information CourierWise may collect, why it
-            is collected, and how it is used.
-          </p>
+          <div className="mt-4 inline-flex items-center gap-2 rounded-full bg-muted px-3 py-1 text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">
+            Last updated · May 2026
+          </div>
+        </section>
+
+        {/* Two-up: What we collect + Why */}
+        <div className="mt-10 grid gap-4 md:grid-cols-2">
+          <InfoCard icon={<Database className="h-5 w-5" />} title="What CourierWise collects">
+            <p className="text-muted-foreground">CourierWise may collect:</p>
+            <BulletList
+              items={[
+                "Quote inputs such as pickup city, destination city, parcel weight, COD amount, and selected zone when you use comparison features.",
+                "Product analytics events, such as quote generation and bulk summary copy events, to understand usage and improve the product.",
+                "Verification or correction submissions you choose to send, including courier name, zone, submitted price, evidence URL, optional contact info, and notes.",
+                "Technical anti-abuse data such as IP address for rate-limiting and spam prevention on submissions.",
+              ]}
+            />
+          </InfoCard>
+
+          <InfoCard icon={<Target className="h-5 w-5" />} title="Why this information is collected">
+            <p className="text-muted-foreground">CourierWise uses this information to:</p>
+            <BulletList
+              items={[
+                "Generate courier comparisons and bulk quote summaries.",
+                "Improve product quality and understand which features merchants use most.",
+                "Review reported pricing corrections and verification submissions.",
+                "Prevent spam, abuse, and repeated automated submissions.",
+              ]}
+            />
+          </InfoCard>
         </div>
 
-        <Section title="What CourierWise collects">
-          <p>CourierWise may collect:</p>
-          <ul className="list-disc space-y-1.5 pl-5">
-            <li>
-              Quote inputs such as pickup city, destination city, parcel weight,
-              COD amount, and selected zone when you use comparison features.
-            </li>
-            <li>
-              Product analytics events, such as quote generation and bulk summary
-              copy events, to understand usage and improve the product.
-            </li>
-            <li>
-              Verification or correction submissions you choose to send,
-              including courier name, zone, submitted price, evidence URL,
-              optional contact info, and notes.
-            </li>
-            <li>
-              Technical anti-abuse data such as IP address for rate-limiting and
-              spam prevention on submissions.
-            </li>
-          </ul>
-        </Section>
+        {/* What CourierWise does NOT do — 3-up stat row */}
+        <section className="mt-4">
+          <div className="grid gap-3 sm:grid-cols-3">
+            <NotCard
+              icon={<UserX className="h-5 w-5" />}
+              title="No accounts required"
+              text="CourierWise does not require user accounts for normal quote usage."
+            />
+            <NotCard
+              icon={<ShieldOff className="h-5 w-5" />}
+              title="No data selling"
+              text="CourierWise does not sell your personal information."
+            />
+            <NotCard
+              icon={<WalletCards className="h-5 w-5" />}
+              title="No bookings or payments"
+              text="CourierWise does not process courier bookings or payments."
+            />
+          </div>
+        </section>
 
-        <Section title="Why this information is collected">
-          <p>CourierWise uses this information to:</p>
-          <ul className="list-disc space-y-1.5 pl-5">
-            <li>Generate courier comparisons and bulk quote summaries.</li>
-            <li>
-              Improve product quality and understand which features merchants
-              use most.
-            </li>
-            <li>Review reported pricing corrections and verification submissions.</li>
-            <li>Prevent spam, abuse, and repeated automated submissions.</li>
-          </ul>
-        </Section>
+        {/* Three-up: submissions + retention + third-party */}
+        <div className="mt-4 grid gap-4 md:grid-cols-3">
+          <InfoCard icon={<FileCheck2 className="h-5 w-5" />} title="Verification submissions">
+            <p>
+              If you submit a rate correction or verification, the information
+              you provide may be stored and reviewed by the CourierWise admin
+              system.
+            </p>
+            <p>
+              Please do not include sensitive personal information unless it is
+              necessary to explain a courier pricing issue.
+            </p>
+          </InfoCard>
 
-        <Section title="What CourierWise does not do">
-          <p>CourierWise does not require user accounts for normal quote usage.</p>
-          <p>CourierWise does not sell your personal information.</p>
-          <p>CourierWise does not process courier bookings or payments.</p>
-        </Section>
+          <InfoCard icon={<Lock className="h-5 w-5" />} title="Data retention & security">
+            <p>
+              CourierWise keeps only the information needed to operate the
+              product, review corrections, and protect the service from abuse.
+            </p>
+            <p>
+              Reasonable steps should be taken to protect stored data, but no
+              internet service can guarantee absolute security.
+            </p>
+          </InfoCard>
 
-        <Section title="Verification submissions">
-          <p>
-            If you submit a rate correction or verification, the information you
-            provide may be stored and reviewed by the CourierWise admin system.
-          </p>
-          <p>
-            Please do not include sensitive personal information unless it is
-            necessary to explain a courier pricing issue.
-          </p>
-        </Section>
+          <InfoCard icon={<Network className="h-5 w-5" />} title="Third-party services">
+            <p>
+              CourierWise may rely on third-party infrastructure and tools to
+              run the app, database, analytics, and hosting. These providers
+              may process technical data required to deliver the service.
+            </p>
+          </InfoCard>
+        </div>
 
-        <Section title="Data retention and security">
-          <p>
-            CourierWise keeps only the information needed to operate the
-            product, review corrections, and protect the service from abuse.
-          </p>
-          <p>
-            Reasonable steps should be taken to protect stored data, but no
-            internet service can guarantee absolute security.
-          </p>
-        </Section>
-
-        <Section title="Third-party services">
-          <p>
-            CourierWise may rely on third-party infrastructure and tools to run
-            the app, database, analytics, and hosting. These providers may
-            process technical data required to deliver the service.
-          </p>
-        </Section>
-
-        <Section title="Contact">
-          <p>
-            If you have a privacy question or want a submission reviewed or
-            removed, contact:{" "}
-            <a
-              href="mailto:privacy@courierwise.app"
-              className="font-medium text-primary underline-offset-4 hover:underline"
-            >
-              privacy@courierwise.app
+        {/* Contact CTA */}
+        <section className="mt-6 rounded-2xl border bg-secondary p-6 shadow-sm sm:p-8">
+          <div className="flex flex-col items-start justify-between gap-5 sm:flex-row sm:items-center">
+            <div className="flex items-start gap-4">
+              <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-primary text-primary-foreground shadow-sm">
+                <Mail className="h-5 w-5" aria-hidden="true" />
+              </div>
+              <div>
+                <h2 className="text-lg font-semibold">Privacy contact</h2>
+                <p className="mt-1 text-sm text-muted-foreground">
+                  Have a privacy question or want a submission reviewed or
+                  removed? Reach out.
+                </p>
+              </div>
+            </div>
+            <a href="mailto:privacy@courierwise.app">
+              <Button size="lg" className="h-11">
+                privacy@courierwise.app
+              </Button>
             </a>
-          </p>
-        </Section>
+          </div>
+        </section>
 
         <MarketingFooter current="privacy" />
       </main>
@@ -133,11 +173,62 @@ function PrivacyPage() {
   );
 }
 
-function Section({ title, children }: { title: string; children: React.ReactNode }) {
+function InfoCard({
+  icon,
+  title,
+  children,
+  className = "",
+}: {
+  icon: React.ReactNode;
+  title: string;
+  children: React.ReactNode;
+  className?: string;
+}) {
   return (
-    <section className="mt-8">
-      <h2 className="text-xl font-semibold">{title}</h2>
-      <div className="mt-3 space-y-3 leading-7 text-muted-foreground">{children}</div>
+    <section className={`rounded-2xl border bg-card p-6 shadow-sm ${className}`}>
+      <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-accent text-accent-foreground">
+        {icon}
+      </div>
+      <h2 className="mt-4 text-lg font-semibold">{title}</h2>
+      <div className="mt-2 space-y-3 text-sm leading-6 text-muted-foreground">
+        {children}
+      </div>
     </section>
+  );
+}
+
+function NotCard({
+  icon,
+  title,
+  text,
+}: {
+  icon: React.ReactNode;
+  title: string;
+  text: string;
+}) {
+  return (
+    <div className="rounded-xl border bg-card p-4 shadow-sm">
+      <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-accent text-accent-foreground">
+        {icon}
+      </div>
+      <h3 className="mt-4 text-sm font-semibold">{title}</h3>
+      <p className="mt-1.5 text-sm leading-6 text-muted-foreground">{text}</p>
+    </div>
+  );
+}
+
+function BulletList({ items }: { items: string[] }) {
+  return (
+    <ul className="space-y-2">
+      {items.map((it, i) => (
+        <li key={i} className="flex gap-2.5">
+          <span
+            className="mt-2 h-1.5 w-1.5 shrink-0 rounded-full bg-primary"
+            aria-hidden="true"
+          />
+          <span>{it}</span>
+        </li>
+      ))}
+    </ul>
   );
 }
