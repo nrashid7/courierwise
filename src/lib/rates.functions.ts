@@ -44,6 +44,9 @@ export const submitRateReport = createServerFn({ method: "POST" })
       .from("submission_throttle_log")
       .insert({ ip, kind: "report" });
     const { error } = await supabaseAdmin.from("rate_reports").insert(data);
-    if (error) throw new Error(error.message);
+    if (error) {
+      console.error("[db error]", error);
+      throw new Error("A database error occurred. Please try again.");
+    }
     return { ok: true };
   });

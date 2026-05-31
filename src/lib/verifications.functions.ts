@@ -76,7 +76,10 @@ export const submitVerification = createServerFn({ method: "POST" })
     const { error } = await supabaseAdmin
       .from("rate_verifications")
       .insert({ ...data, status: "pending" });
-    if (error) throw new Error(error.message);
+    if (error) {
+      console.error("[db error]", error);
+      throw new Error("A database error occurred. Please try again.");
+    }
     return { ok: true };
   });
 
@@ -88,7 +91,10 @@ export const listVerifications = createServerFn({ method: "GET" })
       .from("rate_verifications")
       .select("*")
       .order("created_at", { ascending: false });
-    if (error) throw new Error(error.message);
+    if (error) {
+      console.error("[db error]", error);
+      throw new Error("A database error occurred. Please try again.");
+    }
     return { verifications: (rows ?? []) as unknown as RateVerification[] };
   });
 
@@ -108,6 +114,9 @@ export const updateVerificationStatus = createServerFn({ method: "POST" })
       .from("rate_verifications")
       .update({ status: data.status })
       .eq("id", data.id);
-    if (error) throw new Error(error.message);
+    if (error) {
+      console.error("[db error]", error);
+      throw new Error("A database error occurred. Please try again.");
+    }
     return { ok: true };
   });
