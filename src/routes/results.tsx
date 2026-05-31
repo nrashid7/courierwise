@@ -669,8 +669,9 @@ function ReportDialog({
           </div>
 
           <div className="space-y-1.5">
-            <Label className="text-xs">What was wrong?</Label>
+            <Label htmlFor="rd-issue" className="text-xs">What was wrong?</Label>
             <Textarea
+              id="rd-issue"
               value={issue}
               onChange={(e) => setIssue(e.target.value)}
               placeholder="e.g. Base price is now ৳80 inside Dhaka."
@@ -679,8 +680,9 @@ function ReportDialog({
             />
           </div>
           <div className="space-y-1.5">
-            <Label className="text-xs">Actual charged amount (BDT, optional)</Label>
+            <Label htmlFor="rd-actual" className="text-xs">Actual charged amount (BDT, optional)</Label>
             <Input
+              id="rd-actual"
               type="number"
               min="0"
               value={actual}
@@ -688,8 +690,9 @@ function ReportDialog({
             />
           </div>
           <div className="space-y-1.5">
-            <Label className="text-xs">Screenshot note (optional)</Label>
+            <Label htmlFor="rd-screenshot-note" className="text-xs">Screenshot note (optional)</Label>
             <Input
+              id="rd-screenshot-note"
               value={screenshotNote}
               onChange={(e) => setScreenshotNote(e.target.value)}
               placeholder="Describe your screenshot / proof"
@@ -699,8 +702,9 @@ function ReportDialog({
             </p>
           </div>
           <div className="space-y-1.5">
-            <Label className="text-xs">Your contact (optional)</Label>
+            <Label htmlFor="rd-contact" className="text-xs">Your contact (optional)</Label>
             <Input
+              id="rd-contact"
               value={reporterContact}
               onChange={(e) => setReporterContact(e.target.value)}
               placeholder="Phone, email, or page name — so we can follow up"
