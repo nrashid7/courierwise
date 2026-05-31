@@ -75,10 +75,10 @@ function ErrorComponent({ error, reset }: { error: Error; reset: () => void }) {
 
 export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()({
   head: () => {
-    const title = "CourierWise — Compare Bangladesh courier rates";
+    const title = "CourierWise";
     const description =
-      "Compare Pathao, REDX, Steadfast, and Delivery Tiger delivery costs instantly for Bangladesh e-commerce and f-commerce sellers.";
-    const siteUrl = "https://courierwise.com";
+      "Independent courier rate comparison tool for Bangladesh e-commerce and f-commerce sellers — Pathao, REDX, Steadfast, Delivery Tiger.";
+    const siteUrl = "https://courierwise.lovable.app";
     const ogImage = `${siteUrl}/og-image.png`;
     return {
       meta: [
@@ -90,7 +90,6 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
         { property: "og:title", content: title },
         { property: "og:description", content: description },
         { property: "og:type", content: "website" },
-        { property: "og:url", content: siteUrl },
         { property: "og:site_name", content: "CourierWise" },
         { property: "og:image", content: ogImage },
         { name: "twitter:card", content: "summary_large_image" },
@@ -98,9 +97,30 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
         { name: "twitter:description", content: description },
         { name: "twitter:image", content: ogImage },
       ],
-      links: [
-        { rel: "stylesheet", href: appCss },
-        { rel: "canonical", href: siteUrl },
+      links: [{ rel: "stylesheet", href: appCss }],
+      scripts: [
+        {
+          type: "application/ld+json",
+          children: JSON.stringify({
+            "@context": "https://schema.org",
+            "@type": "WebSite",
+            name: "CourierWise",
+            url: siteUrl,
+            description,
+          }),
+        },
+        {
+          type: "application/ld+json",
+          children: JSON.stringify({
+            "@context": "https://schema.org",
+            "@type": "Organization",
+            name: "CourierWise",
+            url: siteUrl,
+            logo: ogImage,
+            description:
+              "Courier rate comparison service for Bangladesh f-commerce sellers, comparing Pathao, REDX, Steadfast, and Delivery Tiger.",
+          }),
+        },
       ],
     };
   },
