@@ -1,6 +1,6 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
-import { ArrowLeft, BadgeCheck, Clock, ExternalLink, Flag, Info } from "lucide-react";
+import { ArrowLeft, BadgeCheck, Clock, Copy, ExternalLink, Flag, Info, PackageOpen } from "lucide-react";
 import { useEffect, useState } from "react";
 import { z } from "zod";
 import { trackEvent } from "@/lib/analytics";
@@ -126,7 +126,17 @@ function ResultsPage() {
     );
 
 
-  const weightOverLimit = search.weight > 3;
+  const weightOverLimit = search.weight > 6;
+
+  const handleCopyLink = async () => {
+    try {
+      const url = typeof window !== "undefined" ? window.location.href : "";
+      await navigator.clipboard.writeText(url);
+      toast.success("Quote link copied");
+    } catch {
+      toast.error("Couldn't copy link. Please copy from the address bar.");
+    }
+  };
 
   return (
     <div className="min-h-screen bg-background">
@@ -171,12 +181,33 @@ function ResultsPage() {
         {weightOverLimit && (
           <div className="mt-3 flex items-start gap-2 rounded-lg border border-warning/30 bg-warning/10 px-3 py-2 text-xs text-warning-foreground">
             <Info className="mt-0.5 h-4 w-4 shrink-0 text-warning" />
-            <p>Rates above 3kg may vary by courier. Verify before booking.</p>
+            <p>Rates above 6kg may vary by courier. Verify before booking.</p>
           </div>
         )}
 
+        <div className="mt-3 flex justify-end">
+          <Button variant="outline" size="sm" onClick={handleCopyLink}>
+            <Copy className="mr-2 h-4 w-4" />
+            Copy quote link
+          </Button>
+        </div>
+
         {isLoading && (
-          <p className="mt-6 text-center text-sm text-muted-foreground">Loading rates…</p>
+          <div className="mt-4 space-y-3" aria-label="Loading rates">
+            {[0, 1, 2].map((i) => (
+              <div
+                key={i}
+                className="animate-pulse rounded-xl border bg-card p-4"
+              >
+                <div className="flex items-center justify-between">
+                  <div className="h-4 w-32 rounded bg-muted" />
+                  <div className="h-6 w-20 rounded bg-muted" />
+                </div>
+                <div className="mt-3 h-3 w-3/4 rounded bg-muted" />
+                <div className="mt-2 h-3 w-1/2 rounded bg-muted" />
+              </div>
+            ))}
+          </div>
         )}
         {error && (
           <p className="mt-6 text-center text-sm text-destructive">
@@ -197,9 +228,22 @@ function ResultsPage() {
             />
           ))}
           {!isLoading && quotes.length === 0 && (
-            <p className="text-center text-sm text-muted-foreground">
-              No rate available for this weight and zone yet.
-            </p>
+            <div className="rounded-xl border bg-card p-6 text-center">
+              <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-muted">
+                <PackageOpen className="h-6 w-6 text-muted-foreground" />
+              </div>
+              <h3 className="mt-3 text-base font-semibold">No rate available yet</h3>
+              <p className="mt-1 text-sm text-muted-foreground">
+                We don't have a matching rate for this weight and zone yet.
+              </p>
+              <Link to="/compare" className="mt-4 inline-block">
+                <Button size="sm">Try different details</Button>
+              </Link>
+              <p className="mt-3 text-xs text-muted-foreground">
+                Spotted a missing courier? Help other merchants by reporting it
+                from any quote card once rates appear.
+              </p>
+            </div>
           )}
         </div>
 

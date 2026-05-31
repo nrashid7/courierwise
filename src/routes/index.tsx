@@ -32,12 +32,7 @@ function Index() {
           </div>
           <span className="text-lg font-semibold tracking-tight">CourierWise</span>
         </div>
-        <Link
-          to="/admin"
-          className="text-xs text-muted-foreground hover:text-foreground"
-        >
-          Admin
-        </Link>
+        <span className="sr-only">CourierWise</span>
       </header>
 
       <main className="mx-auto max-w-2xl px-4 pb-16 pt-8">
