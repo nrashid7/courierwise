@@ -36,6 +36,11 @@ import {
   markReportReviewed,
   type RateReport,
 } from "@/lib/reports.functions";
+import {
+  listVerifications,
+  updateVerificationStatus,
+  type RateVerification,
+} from "@/lib/verifications.functions";
 
 export const Route = createFileRoute("/admin")({
   head: () => ({
