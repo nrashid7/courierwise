@@ -431,10 +431,12 @@ function SlabDialog({
   const [notes, setNotes] = useState(initial?.notes ?? "");
   const [sourceUrl, setSourceUrl] = useState(initial?.source_url ?? "");
   const [sourceType, setSourceType] = useState(initial?.source_type ?? "official_site");
-  const [verificationStatus, setVerificationStatus] = useState(
-    initial?.verification_status ?? "estimated",
+  const [verificationStatus, setVerificationStatus] = useState<VerificationStatus>(
+    (initial?.verification_status as VerificationStatus) ?? "ESTIMATED",
   );
-  const [confidence, setConfidence] = useState(initial?.confidence_score ?? "low");
+  const [confidence, setConfidence] = useState<string>(
+    String(initial?.confidence_score ?? 0.35),
+  );
   const [estimatedFlag, setEstimatedFlag] = useState(initial?.estimated_flag ?? true);
   const [verifiedBy, setVerifiedBy] = useState(initial?.verified_by ?? "");
   const [verified, setVerified] = useState(
