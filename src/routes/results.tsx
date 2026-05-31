@@ -530,7 +530,7 @@ function VerifyDialog({
         <DialogHeader>
           <DialogTitle>Submit a verified rate</DialogTitle>
           <DialogDescription>
-            Help confirm or correct the {courierName} rate for {zone}.
+            Help confirm or correct the {courierName} rate for {zoneLabel}.
           </DialogDescription>
         </DialogHeader>
         <form onSubmit={onSubmit} className="space-y-3">
