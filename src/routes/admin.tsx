@@ -536,26 +536,24 @@ function SlabDialog({
               <Input value={eta} onChange={(e) => setEta(e.target.value)} />
             </Field>
             <Field label="Verification status">
-              <Select value={verificationStatus} onValueChange={(v) => setVerificationStatus(v as typeof verificationStatus)}>
+              <Select value={verificationStatus} onValueChange={(v) => setVerificationStatus(v as VerificationStatus)}>
                 <SelectTrigger><SelectValue /></SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="official">Official</SelectItem>
-                  <SelectItem value="community_verified">Community verified</SelectItem>
-                  <SelectItem value="estimated">Estimated</SelectItem>
-                  <SelectItem value="outdated">Outdated</SelectItem>
-                  <SelectItem value="disputed">Disputed</SelectItem>
+                  {VERIFICATION_STATUSES.map((s) => (
+                    <SelectItem key={s} value={s}>{s.replace("_", " ")}</SelectItem>
+                  ))}
                 </SelectContent>
               </Select>
             </Field>
-            <Field label="Confidence">
-              <Select value={confidence} onValueChange={(v) => setConfidence(v as typeof confidence)}>
-                <SelectTrigger><SelectValue /></SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="high">High</SelectItem>
-                  <SelectItem value="medium">Medium</SelectItem>
-                  <SelectItem value="low">Low</SelectItem>
-                </SelectContent>
-              </Select>
+            <Field label="Confidence (0–1)">
+              <Input
+                type="number"
+                step="0.05"
+                min="0"
+                max="1"
+                value={confidence}
+                onChange={(e) => setConfidence(e.target.value)}
+              />
             </Field>
             <Field label="Source type">
               <Select value={sourceType ?? "official_site"} onValueChange={setSourceType}>
