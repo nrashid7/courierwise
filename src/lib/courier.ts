@@ -122,7 +122,26 @@ export function legacyZoneToCanonical(zone: string | undefined | null): Canonica
       return "INTER_DISTRICT";
     default:
       return "INSIDE_DHAKA";
-  }
+}
+
+/**
+ * Infer the canonical delivery zone from pickup + destination city names.
+ * Case-insensitive, trims input, tolerates messy capitalization.
+ */
+export function inferZone(
+  pickup: string,
+  destination: string,
+): CanonicalZone {
+  const DHAKA = "dhaka";
+  const SUBURBAN = ["gazipur", "savar", "narayanganj", "keraniganj", "tongi"];
+  const p = (pickup ?? "").trim().toLowerCase();
+  const d = (destination ?? "").trim().toLowerCase();
+
+  if (p === DHAKA && d === DHAKA) return "INSIDE_DHAKA";
+  if (p === DHAKA && SUBURBAN.includes(d)) return "SUBURBAN";
+  if (p === DHAKA && d !== DHAKA) return "OUTSIDE_DHAKA";
+  return "INTER_DISTRICT";
+}
 }
 
 /**
