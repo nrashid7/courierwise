@@ -406,3 +406,116 @@ function ReportDialog({
     </Dialog>
   );
 }
+
+function VerifyDialog({
+  slabId,
+  courierName,
+  zone,
+  userWeight,
+}: {
+  slabId: string;
+  courierName: string;
+  zone: string;
+  userWeight: number;
+}) {
+  const [open, setOpen] = useState(false);
+  const [submittedPrice, setSubmittedPrice] = useState("");
+  const [evidenceUrl, setEvidenceUrl] = useState("");
+  const [submitterContact, setSubmitterContact] = useState("");
+  const [notes, setNotes] = useState("");
+  const [submitting, setSubmitting] = useState(false);
+  const submit = useServerFn(submitVerification);
+
+  const onSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!submittedPrice && !notes.trim()) {
+      toast.error("Provide a corrected price or a note.");
+      return;
+    }
+    setSubmitting(true);
+    try {
+      await submit({
+        data: {
+          slab_id: slabId,
+          courier_name: courierName,
+          zone,
+          weight: userWeight,
+          submitted_price: submittedPrice ? Number(submittedPrice) : null,
+          evidence_url: evidenceUrl.trim() || null,
+          submitter_contact: submitterContact.trim() || null,
+          notes: notes.trim() || null,
+        },
+      });
+      toast.success("Thanks — verification submitted for review.");
+      setOpen(false);
+      setSubmittedPrice(""); setEvidenceUrl(""); setSubmitterContact(""); setNotes("");
+    } catch (err) {
+      toast.error((err as Error).message);
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  return (
+    <Dialog open={open} onOpenChange={setOpen}>
+      <DialogTrigger asChild>
+        <Button variant="outline" size="sm" className="h-8 text-xs">
+          <BadgeCheck className="mr-1 h-3 w-3" /> Verify
+        </Button>
+      </DialogTrigger>
+      <DialogContent className="sm:max-w-md">
+        <DialogHeader>
+          <DialogTitle>Submit a verified rate</DialogTitle>
+          <DialogDescription>
+            Help confirm or correct the {courierName} rate for {zone}.
+          </DialogDescription>
+        </DialogHeader>
+        <form onSubmit={onSubmit} className="space-y-3">
+          <div className="space-y-1.5">
+            <Label className="text-xs">Verified price (BDT)</Label>
+            <Input
+              type="number"
+              min="0"
+              value={submittedPrice}
+              onChange={(e) => setSubmittedPrice(e.target.value)}
+              placeholder={`Actual charge for ${userWeight}kg`}
+            />
+          </div>
+          <div className="space-y-1.5">
+            <Label className="text-xs">Evidence link (invoice / screenshot URL)</Label>
+            <Input
+              value={evidenceUrl}
+              onChange={(e) => setEvidenceUrl(e.target.value)}
+              placeholder="https://"
+              maxLength={500}
+            />
+          </div>
+          <div className="space-y-1.5">
+            <Label className="text-xs">Notes</Label>
+            <Textarea
+              value={notes}
+              onChange={(e) => setNotes(e.target.value)}
+              rows={2}
+              placeholder="Anything else worth noting"
+              maxLength={2000}
+            />
+          </div>
+          <div className="space-y-1.5">
+            <Label className="text-xs">Your contact (optional)</Label>
+            <Input
+              value={submitterContact}
+              onChange={(e) => setSubmitterContact(e.target.value)}
+              placeholder="Phone, email, or page name"
+              maxLength={200}
+            />
+          </div>
+          <DialogFooter>
+            <Button type="submit" disabled={submitting} className="w-full">
+              {submitting ? "Submitting…" : "Submit verification"}
+            </Button>
+          </DialogFooter>
+        </form>
+      </DialogContent>
+    </Dialog>
+  );
+}
