@@ -13,18 +13,22 @@ import { Button } from "@/components/ui/button";
 export const Route = createFileRoute("/")({
   head: () => ({
     meta: [
-      { title: "CourierWise — Compare Bangladesh courier rates" },
+      { title: "Compare Pathao, REDX, Steadfast & Delivery Tiger rates — CourierWise" },
       {
         name: "description",
         content:
           "CourierWise helps f-commerce sellers estimate delivery cost across Pathao, REDX, Steadfast, and Delivery Tiger.",
       },
-      { property: "og:title", content: "CourierWise — Compare Bangladesh courier rates" },
+      { property: "og:title", content: "Compare Pathao, REDX, Steadfast & Delivery Tiger rates — CourierWise" },
       {
         property: "og:description",
         content:
           "Compare Pathao, REDX, Steadfast and Delivery Tiger rates before you book.",
       },
+      { property: "og:url", content: "https://courierwise.lovable.app/" },
+    ],
+    links: [
+      { rel: "canonical", href: "https://courierwise.lovable.app/" },
     ],
   }),
   component: Index,
