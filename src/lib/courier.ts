@@ -51,8 +51,8 @@ export type CanonicalZone =
 export const CANONICAL_ZONE_LABELS: Record<CanonicalZone, string> = {
   INSIDE_DHAKA: "Inside Dhaka",
   SUBURBAN: "Dhaka Suburbs",
-  OUTSIDE_DHAKA: "Outside Dhaka",
-  INTER_DISTRICT: "Outside Dhaka → Outside Dhaka",
+  OUTSIDE_DHAKA: "Dhaka to Outside Dhaka",
+  INTER_DISTRICT: "Outside Dhaka to Outside Dhaka",
 };
 
 export const VERIFICATION_STATUSES: VerificationStatus[] = [
