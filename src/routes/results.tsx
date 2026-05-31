@@ -86,8 +86,22 @@ export const Route = createFileRoute("/results")({
   validateSearch: (search) => searchSchema.parse(search),
   head: () => ({
     meta: [
-      { title: "Results — CourierWise" },
-      { name: "description", content: "Cheapest courier options for your parcel." },
+      { title: "Courier rate results — CourierWise" },
+      {
+        name: "description",
+        content:
+          "Ranked courier options for your parcel — delivery fee plus COD fee combined, so you can pick the cheapest courier before booking.",
+      },
+      { property: "og:title", content: "Courier rate results — CourierWise" },
+      {
+        property: "og:description",
+        content:
+          "Compare ranked Pathao, REDX, Steadfast, and Delivery Tiger quotes with COD-aware totals for your parcel.",
+      },
+      { property: "og:url", content: "https://courierwise.lovable.app/results" },
+    ],
+    links: [
+      { rel: "canonical", href: "https://courierwise.lovable.app/results" },
     ],
   }),
   component: ResultsPage,
@@ -655,8 +669,9 @@ function ReportDialog({
           </div>
 
           <div className="space-y-1.5">
-            <Label className="text-xs">What was wrong?</Label>
+            <Label htmlFor="rd-issue" className="text-xs">What was wrong?</Label>
             <Textarea
+              id="rd-issue"
               value={issue}
               onChange={(e) => setIssue(e.target.value)}
               placeholder="e.g. Base price is now ৳80 inside Dhaka."
@@ -665,8 +680,9 @@ function ReportDialog({
             />
           </div>
           <div className="space-y-1.5">
-            <Label className="text-xs">Actual charged amount (BDT, optional)</Label>
+            <Label htmlFor="rd-actual" className="text-xs">Actual charged amount (BDT, optional)</Label>
             <Input
+              id="rd-actual"
               type="number"
               min="0"
               value={actual}
@@ -674,8 +690,9 @@ function ReportDialog({
             />
           </div>
           <div className="space-y-1.5">
-            <Label className="text-xs">Screenshot note (optional)</Label>
+            <Label htmlFor="rd-screenshot-note" className="text-xs">Screenshot note (optional)</Label>
             <Input
+              id="rd-screenshot-note"
               value={screenshotNote}
               onChange={(e) => setScreenshotNote(e.target.value)}
               placeholder="Describe your screenshot / proof"
@@ -685,8 +702,9 @@ function ReportDialog({
             </p>
           </div>
           <div className="space-y-1.5">
-            <Label className="text-xs">Your contact (optional)</Label>
+            <Label htmlFor="rd-contact" className="text-xs">Your contact (optional)</Label>
             <Input
+              id="rd-contact"
               value={reporterContact}
               onChange={(e) => setReporterContact(e.target.value)}
               placeholder="Phone, email, or page name — so we can follow up"
@@ -798,8 +816,9 @@ function VerifyDialog({
             />
           </div>
           <div className="space-y-1.5">
-            <Label className="text-xs">Verified price (BDT)</Label>
+            <Label htmlFor="vd-price" className="text-xs">Verified price (BDT)</Label>
             <Input
+              id="vd-price"
               type="number"
               min="0"
               value={submittedPrice}
@@ -808,8 +827,9 @@ function VerifyDialog({
             />
           </div>
           <div className="space-y-1.5">
-            <Label className="text-xs">Evidence link (invoice / screenshot URL)</Label>
+            <Label htmlFor="vd-evidence" className="text-xs">Evidence link (invoice / screenshot URL)</Label>
             <Input
+              id="vd-evidence"
               value={evidenceUrl}
               onChange={(e) => setEvidenceUrl(e.target.value)}
               placeholder="https://"
@@ -817,8 +837,9 @@ function VerifyDialog({
             />
           </div>
           <div className="space-y-1.5">
-            <Label className="text-xs">Notes</Label>
+            <Label htmlFor="vd-notes" className="text-xs">Notes</Label>
             <Textarea
+              id="vd-notes"
               value={notes}
               onChange={(e) => setNotes(e.target.value)}
               rows={2}
@@ -827,8 +848,9 @@ function VerifyDialog({
             />
           </div>
           <div className="space-y-1.5">
-            <Label className="text-xs">Your contact (optional)</Label>
+            <Label htmlFor="vd-contact" className="text-xs">Your contact (optional)</Label>
             <Input
+              id="vd-contact"
               value={submitterContact}
               onChange={(e) => setSubmitterContact(e.target.value)}
               placeholder="Phone, email, or page name"

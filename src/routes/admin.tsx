@@ -69,7 +69,21 @@ export const Route = createFileRoute("/admin")({
   head: () => ({
     meta: [
       { title: "Admin — CourierWise" },
-      { name: "description", content: "Manage courier rate slabs." },
+      {
+        name: "description",
+        content:
+          "Internal CourierWise admin panel to manage courier rate slabs and review user-submitted rate reports and verifications.",
+      },
+      { name: "robots", content: "noindex,nofollow" },
+      { property: "og:title", content: "Admin — CourierWise" },
+      {
+        property: "og:description",
+        content: "Internal CourierWise admin tools. Not for public access.",
+      },
+      { property: "og:url", content: "https://courierwise.lovable.app/admin" },
+    ],
+    links: [
+      { rel: "canonical", href: "https://courierwise.lovable.app/admin" },
     ],
   }),
   component: AdminPage,

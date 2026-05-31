@@ -1,0 +1,11 @@
+# CourierWise
+
+> Independent courier rate comparison tool for Bangladesh e-commerce and f-commerce sellers. Compare estimated Pathao, REDX, Steadfast, and Delivery Tiger delivery costs and COD fees by route, weight, and parcel value before booking.
+
+CourierWise is not affiliated with any courier company. Rates are estimates based on published slabs plus user-submitted verifications, and should be confirmed with the courier before booking.
+
+## Pages
+
+- [Home](/): Overview of CourierWise and how it helps Bangladesh sellers pick the cheapest courier.
+- [Compare](/compare): Enter pickup city, destination city, delivery zone, parcel weight, and COD amount to generate a comparison.
+- [Results](/results): Ranked courier options for a given parcel — delivery fee plus COD fee combined.
