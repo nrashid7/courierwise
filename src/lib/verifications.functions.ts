@@ -37,6 +37,9 @@ const submitSchema = z.object({
     .string()
     .max(500, "Evidence URL is too long")
     .url("Evidence link must be a valid URL (https://…)")
+    .refine((val) => /^https:\/\//i.test(val), {
+      message: "Evidence URL must start with https://",
+    })
     .nullable()
     .optional(),
   submitter_contact: z.string().max(200, "Contact is too long").nullable().optional(),
