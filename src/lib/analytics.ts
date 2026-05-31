@@ -8,7 +8,9 @@
 export type TrackedEvent =
   | "compare_submitted"
   | "results_viewed"
-  | "rate_report_submitted";
+  | "rate_report_submitted"
+  | "bulk_quote_generated"
+  | "bulk_whatsapp_copied";
 
 const DEBUG =
   typeof import.meta !== "undefined" && (import.meta as any).env?.DEV === true;
