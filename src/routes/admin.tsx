@@ -702,7 +702,7 @@ function VerificationsSection({ passphrase }: { passphrase: string }) {
               {v.weight != null && <span>Weight: {v.weight} kg</span>}
               {v.submitted_price != null && <span>Submitted price: ৳{v.submitted_price}</span>}
               {v.submitter_contact && <span>Contact: {v.submitter_contact}</span>}
-              {v.evidence_url && (
+              {v.evidence_url && /^https:\/\//i.test(v.evidence_url) ? (
                 <a
                   href={v.evidence_url}
                   target="_blank"
@@ -711,7 +711,11 @@ function VerificationsSection({ passphrase }: { passphrase: string }) {
                 >
                   Evidence: {v.evidence_url}
                 </a>
-              )}
+              ) : v.evidence_url ? (
+                <span className="sm:col-span-2 text-muted-foreground">
+                  Evidence (blocked, non-https): {v.evidence_url}
+                </span>
+              ) : null}
               {v.notes && <span className="sm:col-span-2">Notes: {v.notes}</span>}
             </div>
             <div className="mt-3 flex flex-wrap justify-end gap-2">
