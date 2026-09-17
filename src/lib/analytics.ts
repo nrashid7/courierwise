@@ -4,7 +4,6 @@
 // script loads unless a provider is actually configured:
 //
 //   VITE_PLAUSIBLE_DOMAIN  e.g. "courierwise.lovable.app"
-//   VITE_POSTHOG_KEY       e.g. "phc_..."  (optional VITE_POSTHOG_HOST)
 //   VITE_GA4_ID            e.g. "G-XXXXXXX"
 //
 // With none set, tracking stays a safe no-op (dev-only console logging).
@@ -21,11 +20,9 @@ type Env = Record<string, string | undefined>;
 const env: Env =
   typeof import.meta !== "undefined" ? ((import.meta as any).env ?? {}) : {};
 
-const DEBUG = env.DEV === true || (env as any).DEV === true;
+const DEBUG = (env as any).DEV === true;
 
 const PLAUSIBLE_DOMAIN = env.VITE_PLAUSIBLE_DOMAIN;
-const POSTHOG_KEY = env.VITE_POSTHOG_KEY;
-const POSTHOG_HOST = env.VITE_POSTHOG_HOST ?? "https://us.i.posthog.com";
 const GA4_ID = env.VITE_GA4_ID;
 
 let initialised = false;
@@ -68,16 +65,6 @@ export function initAnalytics() {
       (window as any).gtag("config", GA4_ID);
     }
 
-    if (POSTHOG_KEY) {
-      void import("posthog-js")
-        .then(({ default: posthog }) => {
-          posthog.init(POSTHOG_KEY, { api_host: POSTHOG_HOST });
-          (window as any).posthog = posthog;
-        })
-        .catch(() => {
-          /* posthog-js not installed — ignore */
-        });
-    }
   } catch {
     // Never let analytics break the app.
   }
