@@ -1,51 +1,59 @@
-## Goal
+# CourierWise — launch readiness review
 
-The About and Privacy pages currently read as a flat wall of muted text. The homepage feels alive thanks to: a chip badge, a bold tight headline, a side-by-side hero with a bordered card, feature cards with icon tiles, and crisp section grouping. I'll bring the same visual vocabulary to /about and /privacy without changing copy or routing.
+The app works end to end: home, compare (single + bulk), results, about, privacy, admin. What follows is what I found still missing, verified against the live rate data and the code.
 
-## Shared structure (both pages)
+## 1. Rate data gaps (highest impact)
 
-- Keep `MarketingHeader` and `MarketingFooter` (use full `max-w-5xl` to match home).
-- Add a **hero block** styled like the homepage hero:
-  - Small chip badge with icon (e.g. `BadgeCheck` "About CourierWise" / `ShieldCheck` "Privacy Policy")
-  - Large tight headline (`text-4xl sm:text-5xl font-bold tracking-tight`)
-  - One-line muted intro paragraph beneath it
-  - For Privacy: small "Last updated · May 2026" pill instead of plain text
-- Replace plain `<section><h2>` blocks with **bordered content cards** (`rounded-2xl border bg-card p-6 shadow-sm`) like the sample-quote and feature cards on home.
-- Each card gets a small **icon tile** (`h-10 w-10 rounded-lg bg-accent text-accent-foreground`) matching the home Feature component, plus title and body.
-- Use a **2-column grid** (`sm:grid-cols-2`) for the shorter sections so the page reads as a composed surface rather than a long scroll. Long-form sections stay full width.
-- Contact section becomes a highlighted CTA-style card (subtle `bg-secondary` or `bg-accent/40`) with the email rendered as a prominent link, echoing the homepage CTA row.
-- Footer stays as-is (already shared).
+Live active rates today:
 
-## About page specifics
+```text
+Courier          Inside Dhaka  Suburban  Outside Dhaka  Outside→Outside  Weight ceiling
+Pathao           yes           yes       yes            yes              2 kg
+REDX             yes           yes       yes            MISSING          3 kg
+Steadfast        yes           yes       yes            MISSING          3 kg
+Delivery Tiger   yes           yes       yes            MISSING          6 kg
+```
 
-Sections rendered as icon-cards:
-- Why it exists — `Compass` icon, full width
-- How rates work — `Calculator` icon, half width
-- Verification & corrections — `BadgeCheck` icon, half width
-- What CourierWise is not — `XCircle` icon, half width
-- Independent tool note — `ShieldCheck` icon, half width (pulled from the intro's second paragraph for visual balance)
-- Contact — accent CTA card, full width
+Consequences merchants will hit on day one:
+- Pick "Outside Dhaka to Outside Dhaka" and only Pathao appears — the comparison looks broken.
+- Any parcel above each courier's ceiling drops that courier from the list, because no slab has an extra-per-kg price set (all zeros). Above 6 kg every courier disappears and the page shows the empty state, even though the form accepts up to 50 kg.
 
-## Privacy page specifics
+Fix: add inter-district slabs for the three missing couriers, and add per-extra-kg pricing (or higher slabs) so weights above the ceiling still return a quote. Where no published rate exists, mark the row Estimated rather than leaving a hole.
 
-- Hero: chip "Privacy Policy", headline, muted intro, "Last updated" pill.
-- Bulleted sections ("What CourierWise collects", "Why this information is collected") rendered as icon-cards full width with the existing bullet lists — bullets get a small primary-colored dot for polish.
-- "What CourierWise does not do" rendered as 3 small stat-style cards in a `sm:grid-cols-3` row (one statement per card) — visually echoes the homepage 4-up Feature row.
-- "Verification submissions", "Data retention and security", "Third-party services" as a 3-up icon-card grid.
-- Contact: accent CTA card with `privacy@courierwise.app`.
+Also: Steadfast above 1 kg is currently Estimated, not verified — worth confirming before launch since Steadfast is a top-3 choice.
 
-## Files touched
+## 2. Analytics is not connected
 
-- `src/routes/about.tsx` — restructure JSX, no copy changes, no route changes.
-- `src/routes/privacy.tsx` — restructure JSX, no copy changes, no route changes.
-- (Optional) small shared `InfoCard` / `IconTile` helper inside each file — kept local, no new shared component file unless it cleans up duplication meaningfully.
+`src/lib/analytics.ts` is a no-op; events only log in development. Nothing about real usage will be measurable after launch. Needs a provider wired (Plausible or PostHog are the lightest options).
 
-## Out of scope
+## 3. Contact addresses are invented
 
-- No copy edits (text stays verbatim from the previous prompt).
-- No header/footer changes.
-- No new routes, no design tokens added, no new dependencies.
+About and Privacy link to `hello@courierwise.app` and `privacy@courierwise.app`. I made those up in earlier work — they don't exist. Either give me real addresses (a Gmail is fine) or I'll swap them for a form-free alternative.
 
-## QA
+## 4. Sitemap and domain
 
-After implementing, visit `/about` and `/privacy` in the preview at desktop and mobile widths to confirm cards align, icon tiles render, and the contact CTA pops without overwhelming the page.
+- Sitemap lists only `/`, `/compare`, `/results` — missing `/about` and `/privacy`.
+- All URLs are hardcoded to `courierwise.lovable.app`. If a custom domain is planned, sitemap, robots, canonical tags and the share card URL all need updating at the same time.
+- Google Search Console is still not connected/verified, so no indexing visibility.
+
+## 5. Admin access
+
+Admin is one shared passphrase typed into a page anyone can reach by URL. Acceptable for a solo launch; not acceptable if a second person ever helps. Worth deciding now whether that stays.
+
+## 6. Nothing to moderate yet
+
+Zero rate reports and zero verifications exist, so the trust loop has never been exercised with real data. Before launch, submit one of each and walk the admin review flow once.
+
+## Suggested order of work
+
+1. Fill the rate gaps (inter-district + above-ceiling pricing).
+2. Real contact addresses + sitemap entries.
+3. Connect analytics.
+4. Domain decision, then Search Console.
+5. End-to-end test of report → admin review.
+
+## Technical notes
+
+- Rates live in `courier_rate_slabs`; slab selection picks the first matching `min_weight < w <= max_weight` per courier, so an uncovered weight means no row returned. `extra_kg_price` exists on the table and is 0 everywhere — it is the intended overflow mechanism.
+- Zone coverage gap is data-only; `rankSlabQuotes()` and the canonical zone logic need no change.
+- Analytics call sites already exist (`compare_submitted`, `results_viewed`, `rate_report_submitted`, `bulk_quote_generated`, `bulk_whatsapp_copied`) — only the provider hook is missing.
